@@ -58,3 +58,4 @@ Responsive to 360px, keyboard-focusable with visible focus, focus-trapped menu
 and lightbox, real `prefers-reduced-motion` fallbacks (Lenis off, 3D frozen to a
 static wordmark, reveals instant). three.js is code-split into a lazy, Home-only
 chunk; route-level splitting; all video/audio/scheduler embeds load lazily.
+# Skim
