@@ -6,7 +6,7 @@
 // §11: under reduced motion the CSS forces content visible with no transition,
 // and we add .is-in immediately so nothing depends on the observer firing.
 
-import { useEffect, useRef, type ElementType, type ReactNode } from "react";
+import { createElement, useEffect, useRef, type ElementType, type ReactNode } from "react";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 
 export function Reveal({
@@ -48,14 +48,13 @@ export function Reveal({
     return () => io.disconnect();
   }, [reducedMotion]);
 
-  const Tag = as;
-  return (
-    <Tag
-      ref={ref}
-      className={`reveal ${className}`.trim()}
-      style={delay ? { transitionDelay: `${delay}s` } : undefined}
-    >
-      {children}
-    </Tag>
+  return createElement(
+    as,
+    {
+      ref,
+      className: `reveal ${className}`.trim(),
+      style: delay ? { transitionDelay: `${delay}s` } : undefined,
+    },
+    children,
   );
 }
