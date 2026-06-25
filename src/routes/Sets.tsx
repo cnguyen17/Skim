@@ -1,6 +1,7 @@
 // src/routes/Sets.tsx — §6 DJ Sets page: sets / producing / collaborations.
 // The filterable set-photo gallery lands here in Phase 6.
 import { WorkTabs } from "../components/WorkTabs";
+import { Gallery } from "../components/Gallery";
 import { Reveal } from "../components/Reveal";
 
 export default function Sets() {
@@ -18,6 +19,15 @@ export default function Sets() {
           </h1>
         </Reveal>
         <WorkTabs />
+
+        <div className="mt-24">
+          <Reveal>
+            <h2 className="mb-8 font-display text-3xl uppercase text-milk sm:text-4xl">
+              From the sets
+            </h2>
+          </Reveal>
+          <Gallery />
+        </div>
       </div>
     </main>
   );
