@@ -45,8 +45,8 @@ export function Hero() {
   const floatRef = useRef<HTMLDivElement | null>(null);
   const parallaxRef = useRef<HTMLDivElement | null>(null);
   const windowRef = useRef<HTMLDivElement | null>(null);
-  const textLeftRef = useRef<HTMLDivElement | null>(null);
-  const textRightRef = useRef<HTMLDivElement | null>(null);
+  const textTopRef = useRef<HTMLDivElement | null>(null);
+  const textBotRef = useRef<HTMLDivElement | null>(null);
   const foreRef = useRef<HTMLDivElement | null>(null);
   const sigRef = useRef<SVGPathElement | null>(null);
 
@@ -121,24 +121,14 @@ export function Hero() {
       );
       tl.to(windowRef.current, { yPercent: -120, autoAlpha: 0, duration: 0.15 }, 0.85);
 
-      // Side display text: slide in from the edges, drift across, then exit.
-      tl.fromTo(
-        textLeftRef.current,
-        { xPercent: -12, autoAlpha: 0 },
-        { xPercent: -40, autoAlpha: 1, duration: 0.1 },
-        0.12,
-      );
-      tl.to(textLeftRef.current, { xPercent: -62, duration: 0.6 }, 0.22);
-      tl.to(textLeftRef.current, { autoAlpha: 0, duration: 0.13 }, 0.85);
+      // Side display text (HERO_SEQUENCE §2C), restacked top/bottom so it always
+      // fits the viewport width: "turn it up" up top, the credit line at the
+      // bottom; both fade in, then rise and scroll up/out as the hero zooms.
+      tl.fromTo(textTopRef.current, { yPercent: 90, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.12 }, 0.08);
+      tl.to(textTopRef.current, { yPercent: -170, autoAlpha: 0, duration: 0.62 }, 0.28);
 
-      tl.fromTo(
-        textRightRef.current,
-        { xPercent: 12, autoAlpha: 0 },
-        { xPercent: 40, autoAlpha: 1, duration: 0.1 },
-        0.12,
-      );
-      tl.to(textRightRef.current, { xPercent: 62, duration: 0.6 }, 0.22);
-      tl.to(textRightRef.current, { autoAlpha: 0, duration: 0.13 }, 0.85);
+      tl.fromTo(textBotRef.current, { yPercent: -90, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.12 }, 0.08);
+      tl.to(textBotRef.current, { yPercent: -210, autoAlpha: 0, duration: 0.62 }, 0.28);
 
       // Signature draws across the window (it's a child of the window, so it
       // scales + exits with it). Drawn p 0.40 → 0.65.
@@ -148,8 +138,8 @@ export function Hero() {
         tl.fromTo(
           sig,
           { strokeDashoffset: len },
-          { strokeDashoffset: 0, duration: 0.25 },
-          0.4,
+          { strokeDashoffset: 0, duration: 0.3 },
+          0.42,
         );
       }
 
@@ -187,9 +177,10 @@ export function Hero() {
 
   // White-ish source + mix-blend-difference = auto-inverting contrast: the text
   // reads dark on the light opening and light once the background flips to ink,
-  // tracking the transition continuously without a JS color tween.
+  // tracking the transition continuously without a JS color tween. Positioning
+  // lives on the outer wrapper so GSAP can own the inner transform cleanly.
   const sideTextBase =
-    "pointer-events-none absolute top-1/2 z-10 -translate-y-1/2 font-display uppercase leading-[0.85] text-milk mix-blend-difference";
+    "inline-block uppercase leading-[0.9] text-milk mix-blend-difference";
 
   return (
     <section
@@ -201,7 +192,7 @@ export function Hero() {
       <div className="pointer-events-none absolute inset-0">
         {use3D && nearView ? (
           <Suspense fallback={null}>
-            <HeroCanvas progress={progress} />
+            <HeroCanvas progress={progress} box={windowRef} />
           </Suspense>
         ) : (
           // Static fallback (reduced motion / no WebGL): dark, calm.
@@ -209,18 +200,20 @@ export function Hero() {
         )}
       </div>
 
-      {/* Side display text — skim's own words from site.config.hero.message */}
+      {/* Side display text — skim's own words (config). Stacked top/bottom and
+          centered so it always fits; GSAP rises + scrolls each row up and out. */}
       {message0 && (
-        <div ref={textLeftRef} className={`${sideTextBase} left-0 text-[12vw] sm:text-[8vw]`}>
-          {message0}
+        <div className="pointer-events-none absolute inset-x-0 top-[10%] z-10 flex justify-center px-5 text-center">
+          <div ref={textTopRef} className={`${sideTextBase} font-display text-[13vw] sm:text-[9vw]`}>
+            {message0}
+          </div>
         </div>
       )}
       {message1 && (
-        <div
-          ref={textRightRef}
-          className={`${sideTextBase} right-0 text-right font-mono text-[5vw] tracking-[0.04em] sm:text-[3vw]`}
-        >
-          {message1}
+        <div className="pointer-events-none absolute inset-x-0 bottom-[10%] z-10 flex justify-center px-5 text-center">
+          <div ref={textBotRef} className={`${sideTextBase} font-mono tracking-[0.06em] text-[6vw] sm:text-[3vw]`}>
+            {message1}
+          </div>
         </div>
       )}
 
@@ -237,9 +230,9 @@ export function Hero() {
               }`}
             >
               <Centerpiece variant={site.hero.centerpiece} progress={progress} />
-              {/* Signature drawn over the window */}
-              <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-[8%]">
-                <Signature ref={sigRef} drawn={!use3D} className="h-[28%] w-auto text-accent" />
+              {/* Signature draws across the WHOLE logo as the window zooms out */}
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <Signature ref={sigRef} drawn={!use3D} className="h-auto w-[86%] text-accent" />
               </div>
             </div>
           </div>

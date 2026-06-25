@@ -16,7 +16,13 @@ function token(name: string, fallback: string) {
   return v || fallback;
 }
 
-export default function HeroCanvas({ progress }: { progress: RefObject<number> }) {
+export default function HeroCanvas({
+  progress,
+  box,
+}: {
+  progress: RefObject<number>;
+  box: RefObject<HTMLElement | null>;
+}) {
   const colors = useMemo(
     () => ({
       surface: token("--hero-surface", "#F7F2E8"),
@@ -40,6 +46,7 @@ export default function HeroCanvas({ progress }: { progress: RefObject<number> }
       <Suspense fallback={null}>
         <Background
           progress={progress}
+          box={box}
           surface={colors.surface}
           ink={colors.ink}
           lineLo={colors.lineLo}

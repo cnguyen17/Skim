@@ -1,13 +1,18 @@
 // src/three/Background.tsx
-// HERO_SEQUENCE §2A — the ambient background (highest priority). A single
-// full-viewport shader plane drawing slow, drifting topographic CONTOUR LINES
-// with subtle pointer parallax. Its whole tone inverts light → dark as the hero
-// scrolls: one uniform, `uMix`, lerps milk → ink and inverts the line color.
+// HERO_SEQUENCE §2A — the ambient background. A single fullscreen shader plane
+// drawing slow, drifting topographic CONTOUR LINES (domain-warped fbm so the
+// curves are smooth and organic, not polygonal), with subtle pointer parallax.
 //
-// `uMix` is read every frame from the shared hero `progress` ref (0..1) and
-// remapped to the HERO_SEQUENCE background ramp (~0.15 → 0.42). Lines are
-// anti-aliased in screen space (fwidth) so they stay crisp — no moiré on mobile.
+// Two things drive it from the hero scroll:
+//   • uMix (0..1, from the shared `progress` ref) lerps the whole scene milk→ink
+//     and inverts the line color — the page "flips to dark" as you scroll.
+//   • the centerpiece box stays a WINDOW INTO THE LIGHT layer: inside its rect the
+//     scene stays light (lines continue through it) while everything outside
+//     darkens. The box rect is read live from the DOM each frame, so it tracks the
+//     window's scroll-driven scale/move exactly.
 //
+// The plane exactly fills the frustum at z=0, so vUv == screen UV (needed for the
+// box mask). Lines are anti-aliased in screen space (fwidth) — no mobile moiré.
 // Colors come from tokens (§3) via the caller, so nothing is hardcoded here.
 
 import { useMemo, useRef, type RefObject } from "react";
@@ -26,16 +31,17 @@ const fragment = /* glsl */ `
   precision highp float;
   varying vec2 vUv;
   uniform float uTime;
-  uniform float uMix;       // 0 = light/milk, 1 = dark/ink
-  uniform float uAspect;    // viewport w/h, to keep lines from stretching
-  uniform vec2  uMouse;     // eased pointer, -1..1
-  uniform vec3  uSurface;   // light background
-  uniform vec3  uInk;       // dark background
-  uniform vec3  uLineLo;    // line color on light bg
-  uniform vec3  uLineHi;    // line color on dark bg
-  uniform vec3  uAccent;    // cyan, used as a faint highlight band
+  uniform float uMix;        // 0 = light/milk, 1 = dark/ink
+  uniform float uAspect;     // viewport w/h
+  uniform vec2  uMouse;      // eased pointer, -1..1
+  uniform vec2  uBoxCenter;  // centerpiece rect center in screen UV
+  uniform vec2  uBoxHalf;    // centerpiece rect half-size in screen UV
+  uniform vec3  uSurface;    // light background
+  uniform vec3  uInk;        // dark background
+  uniform vec3  uLineLo;     // line color on light bg
+  uniform vec3  uLineHi;     // line color on dark bg
+  uniform vec3  uAccent;     // cyan highlight
 
-  // compact value-noise + fbm (cheap; no textures)
   float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float noise(vec2 p){
     vec2 i = floor(p); vec2 f = fract(p);
@@ -43,7 +49,7 @@ const fragment = /* glsl */ `
     float b = hash(i + vec2(1.0, 0.0));
     float c = hash(i + vec2(0.0, 1.0));
     float d = hash(i + vec2(1.0, 1.0));
-    vec2 u = f * f * (3.0 - 2.0 * f);
+    vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0); // quintic — smooth, no creases
     return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
   }
   float fbm(vec2 p){
@@ -53,38 +59,41 @@ const fragment = /* glsl */ `
   }
 
   void main(){
-    // center + aspect-correct so contours read as round-ish topography
-    vec2 p = vUv - 0.5;
+    vec2 uv = vUv;
+    vec2 p = uv - 0.5;
     p.x *= uAspect;
-    p += uMouse * 0.06;                 // pointer parallax
+    p += uMouse * 0.05;                 // pointer parallax
+    float t = uTime * 0.025;
 
-    // a slowly evolving height field
-    float t = uTime * 0.03;
-    float h = fbm(p * 2.3 + vec2(t, -t * 0.7));
-    h += 0.15 * fbm(p * 5.0 - vec2(t * 0.5, t)); // fine ripples
+    // domain-warped height field -> smooth, flowing contours
+    vec2 q = vec2(fbm(p * 1.6 + vec2(0.0, 1.7)), fbm(p * 1.6 + vec2(4.3, 2.1)));
+    float h = fbm(p * 1.6 + 0.7 * q + vec2(t, -t * 0.6));
 
-    // CONTOUR lines: iso-lines of the height field at regular intervals.
-    float lines = 9.0;                  // number of contour bands
+    // CONTOUR iso-lines at regular height intervals, AA in screen space
+    float lines = 6.0;
     float v = h * lines;
-    float d = abs(fract(v - 0.5) - 0.5) / fwidth(v); // AA distance to nearest line
+    float d = abs(fract(v - 0.5) - 0.5) / fwidth(v);
     float line = 1.0 - clamp(d, 0.0, 1.0);
-    line = pow(line, 1.3);              // crisp edges, soft falloff
 
-    // background tone milk -> ink
-    vec3 bg = mix(uSurface, uInk, uMix);
-    // line tone: dark-on-light -> light-on-dark
-    vec3 lineCol = mix(uLineLo, uLineHi, uMix);
+    // local mix: inside the centerpiece box the scene stays LIGHT (window into the
+    // light layer) while everything outside follows the scroll-driven uMix.
+    vec2 bd = abs(uv - uBoxCenter) - uBoxHalf;
+    float outside = max(bd.x, bd.y);
+    float inBox = 1.0 - smoothstep(-0.004, 0.004, outside);
+    float m = mix(uMix, 0.0, inBox);
 
-    // a faint cyan highlight pooling toward center/mouse, applied to the lines
+    vec3 bg = mix(uSurface, uInk, m);
+    vec3 lineCol = mix(uLineLo, uLineHi, m);
+
+    // faint cyan pooling toward center/mouse
     float halo = smoothstep(0.9, 0.0, length(p));
-    lineCol = mix(lineCol, uAccent, halo * 0.25);
+    lineCol = mix(lineCol, uAccent, halo * 0.18);
 
-    // fade lines slightly as the scene darkens so the dark page below stays calm
-    float strength = mix(0.55, 0.40, uMix);
+    float strength = mix(0.5, 0.36, m); // settle lines a touch as it darkens
     vec3 col = mix(bg, lineCol, line * strength);
 
-    // gentle vignette keeps the edges settled in the base tone
-    col = mix(col, bg, smoothstep(0.6, 1.3, length(vUv - 0.5)) * 0.5);
+    // gentle vignette into the base tone
+    col = mix(col, bg, smoothstep(0.65, 1.35, length(uv - 0.5)) * 0.4);
 
     gl_FragColor = vec4(col, 1.0);
   }
@@ -92,6 +101,7 @@ const fragment = /* glsl */ `
 
 export function Background({
   progress,
+  box,
   surface,
   ink,
   lineLo,
@@ -100,6 +110,8 @@ export function Background({
 }: {
   /** shared hero scroll progress (0..1); drives the light→dark mix */
   progress: RefObject<number>;
+  /** the centerpiece window element; its live rect stays the light "window" */
+  box: RefObject<HTMLElement | null>;
   surface: string;
   ink: string;
   lineLo: string;
@@ -111,9 +123,7 @@ export function Background({
   const target = useRef(new Vector2(0, 0));
 
   const material = useMemo(() => {
-    // tokens may be rgba(...) — three's Color ignores alpha, which is what we
-    // want (the alpha is baked into the line `strength` instead).
-    const c = (v: string) => new Color(v);
+    const c = (v: string) => new Color(v); // Color ignores alpha — by design
     return new ShaderMaterial({
       vertexShader: vertex,
       fragmentShader: fragment,
@@ -122,6 +132,8 @@ export function Background({
         uMix: { value: 0 },
         uAspect: { value: 1 },
         uMouse: { value: new Vector2(0, 0) },
+        uBoxCenter: { value: new Vector2(0.5, 0.5) },
+        uBoxHalf: { value: new Vector2(0, 0) },
         uSurface: { value: c(surface) },
         uInk: { value: c(ink) },
         uLineLo: { value: c(lineLo) },
@@ -135,19 +147,33 @@ export function Background({
     const u = material.uniforms;
     u.uTime.value += delta;
     u.uAspect.value = viewport.width / viewport.height;
-    // ramp the light→dark mix from the hero scroll progress (HERO_SEQUENCE beat
-    // sheet: background begins ~0.15, fully dark ~0.42).
+
+    // light→dark ramp (beat sheet: bg begins ~0.15, fully dark ~0.42)
     const p = progress.current ?? 0;
     u.uMix.value = Math.min(1, Math.max(0, (p - 0.15) / 0.27));
-    // ease the pointer for a liquid feel
+
+    // eased pointer parallax
     target.current.lerp(state.pointer, 0.05);
     (u.uMouse.value as Vector2).copy(target.current);
+
+    // live box rect → screen UV (y up). Reflects the GSAP scale/translate.
+    const el = box.current;
+    if (el && typeof window !== "undefined") {
+      const r = el.getBoundingClientRect();
+      const W = window.innerWidth || 1;
+      const H = window.innerHeight || 1;
+      (u.uBoxCenter.value as Vector2).set(
+        (r.left + r.right) / 2 / W,
+        1 - (r.top + r.bottom) / 2 / H,
+      );
+      (u.uBoxHalf.value as Vector2).set(r.width / 2 / W, r.height / 2 / H);
+    }
   });
 
-  // Cover the camera frustum at this plane's depth.
+  // Fill the frustum exactly at z=0 so vUv maps 1:1 to the screen.
   return (
-    <mesh ref={mesh} position={[0, 0, -2]} material={material}>
-      <planeGeometry args={[viewport.width * 1.6, viewport.height * 1.6, 1, 1]} />
+    <mesh ref={mesh} position={[0, 0, 0]} material={material}>
+      <planeGeometry args={[viewport.width, viewport.height, 1, 1]} />
     </mesh>
   );
 }
