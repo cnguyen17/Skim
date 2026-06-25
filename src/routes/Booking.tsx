@@ -13,7 +13,7 @@ const SERVICES = [
 
 export default function Booking() {
   return (
-    <main className="pt-28">
+    <div className="pt-28">
       <div className="mx-auto max-w-6xl px-5 pb-24 sm:px-8 lg:pb-32">
         <Reveal>
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent">
@@ -63,6 +63,6 @@ export default function Booking() {
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

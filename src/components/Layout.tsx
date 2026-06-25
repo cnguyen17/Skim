@@ -20,11 +20,19 @@ function PageFallback() {
 export function Layout() {
   return (
     <>
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-full focus:bg-accent focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:uppercase focus:tracking-[0.2em] focus:text-ink"
+      >
+        Skip to content
+      </a>
       <Loader />
       <Nav />
-      <Suspense fallback={<PageFallback />}>
-        <Outlet />
-      </Suspense>
+      <main id="main">
+        <Suspense fallback={<PageFallback />}>
+          <Outlet />
+        </Suspense>
+      </main>
       <Footer />
     </>
   );
