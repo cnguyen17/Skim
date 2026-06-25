@@ -1,0 +1,76 @@
+/* src/styles/globals.css
+ * Tailwind v4 entry + base/global styles. Tokens come from tokens.css (§3).
+ */
+
+@import "./tokens.css";
+@import "tailwindcss";
+
+/* ---- Base ---------------------------------------------------------------- */
+
+html {
+  background: var(--ink);
+  color: var(--milk);
+  /* Lenis drives scrolling; keep native smooth off so they don't fight.
+   * Under reduced-motion (Lenis disabled), we re-enable native below. */
+  scroll-behavior: auto;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: var(--font-body);
+  background: var(--ink);
+  color: var(--milk);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 0.95;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Visible focus for keyboard users (§11) */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ---- Lenis smooth scroll (§8) ------------------------------------------- */
+/* Recommended Lenis base styles; only active when <html> has .lenis. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+/* ---- Reduced motion (§8 / §11) ------------------------------------------ */
+/* A real fallback: kill transitions/animations, re-enable native scrolling.
+ * Lenis itself is disabled in JS (see LenisProvider); this is the CSS half. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

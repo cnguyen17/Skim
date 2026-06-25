@@ -1,0 +1,37 @@
+/* src/styles/tokens.css
+ * §3 Design system — SINGLE SOURCE OF TRUTH for color + type.
+ * To rebrand, edit ONLY this file (and --font-display to swap the display face).
+ * Never hardcode colors/fonts in components — reference these tokens.
+ */
+
+:root {
+  /* Palette — DERIVED FROM THE LOGO (§3) */
+  --ink:      #0F0E0C;            /* warm near-black base */
+  --ink-2:    #151310;
+  --milk:     #F7F2E8;            /* cream / milk — primary light text */
+  --accent:   #58D7FF;           /* logo bubble cyan — the ONE bright accent */
+  --accent-2: #FFE24D;           /* logo halo yellow — secondary, use rarely */
+  --mid:      #9AA1AD;           /* muted secondary text */
+  --line:     rgba(247, 242, 232, 0.14);
+
+  /* Type — free Google Fonts (§3) */
+  --font-display: "Anton", Impact, sans-serif;
+  --font-body:    "Inter", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", monospace;
+}
+
+/* Wire tokens into Tailwind v4's theme so utilities (bg-ink, text-milk,
+ * font-display, etc.) resolve to the CSS variables above. */
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-milk: var(--milk);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-mid: var(--mid);
+  --color-line: var(--line);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
