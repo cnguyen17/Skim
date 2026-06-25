@@ -4,11 +4,12 @@
 // → Booking. §11: the overlay traps focus, closes on Esc, restores focus to the
 // trigger, and locks scroll while open.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { site } from "../data/site.config";
 import { RollText } from "./RollText";
 import { useLenis } from "./LenisProvider";
+import { getHeroTheme, subscribeHeroTheme } from "../lib/heroTheme";
 
 type MenuItem = { label: string; to: string };
 
@@ -28,6 +29,12 @@ export function Nav() {
   const location = useLocation();
   const navigate = useNavigate();
   const lenis = useLenis();
+
+  // Invert with the hero background (HERO_SEQUENCE §2E). Discrete flip from the
+  // heroTheme store — no re-render on scroll frames. "light" only on the light
+  // hero opening; everywhere else it's "dark" (the store's default).
+  const heroTheme = useSyncExternalStore(subscribeHeroTheme, getHeroTheme, () => "dark" as const);
+  const light = heroTheme === "light";
 
   // Close on route change.
   useEffect(() => {
@@ -127,7 +134,9 @@ export function Nav() {
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
               aria-haspopup="dialog"
-              className="group flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-milk/90 hover:text-milk"
+              className={`group flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] transition-colors ${
+                light ? "text-ink/80 hover:text-ink" : "text-milk/90 hover:text-milk"
+              }`}
             >
               <span className="flex flex-col gap-[3px]" aria-hidden>
                 <span className="block h-px w-5 bg-current" />
@@ -137,10 +146,15 @@ export function Nav() {
             </button>
           </div>
 
-          {/* Right: get in contact */}
+          {/* Right: get in contact — filled cyan on the light hero (high contrast,
+              like Lando's top-right CTA), readable secondary pill on dark. */}
           <Link
             to="/booking"
-            className="rounded-full border border-line bg-ink/40 px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] text-milk backdrop-blur transition-colors hover:border-accent hover:text-accent"
+            className={
+              light
+                ? "rounded-full bg-accent px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] text-ink transition-transform hover:-translate-y-0.5"
+                : "rounded-full border border-milk/40 bg-ink/40 px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] text-milk backdrop-blur transition-colors hover:border-accent hover:text-accent"
+            }
           >
             <RollText text="Get in contact" />
           </Link>
