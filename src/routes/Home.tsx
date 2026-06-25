@@ -1,27 +1,34 @@
-// src/routes/Home.tsx — §6 scroll narrative.
-// Phase 4: 3D hero. Phase 5 fills in bio + work toggle + contact below it.
+// src/routes/Home.tsx — §6 scroll narrative:
+// loader (Layout) → 3D hero → bio → work toggle → contact → footer (Layout).
 import { Hero } from "../components/Hero";
+import { Bio } from "../components/Bio";
+import { WorkTabs } from "../components/WorkTabs";
+import { ContactCTA } from "../components/ContactCTA";
 import { Reveal } from "../components/Reveal";
-import { site } from "../data/site.config";
 
 export default function Home() {
   return (
     <>
       <Hero />
+      <Bio />
 
-      {/* Bio anchor (DJ Info) — full treatment lands in Phase 5 */}
-      <section id="bio" className="mx-auto max-w-6xl px-5 py-28 sm:px-8">
-        <Reveal>
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent">
-            Get to know him
-          </p>
-        </Reveal>
-        <Reveal>
-          <h2 className="mt-4 max-w-3xl font-display text-4xl uppercase leading-tight text-milk sm:text-6xl">
-            {site.blurb}
-          </h2>
-        </Reveal>
+      <section id="work" className="border-t border-line">
+        <div className="mx-auto max-w-6xl px-5 py-24 sm:px-8 lg:py-32">
+          <Reveal>
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent">
+              The work
+            </p>
+          </Reveal>
+          <Reveal>
+            <h2 className="mb-12 mt-5 font-display text-4xl uppercase leading-tight text-milk sm:text-6xl">
+              Sets, production &amp; collabs
+            </h2>
+          </Reveal>
+          <WorkTabs />
+        </div>
       </section>
+
+      <ContactCTA />
     </>
   );
 }
