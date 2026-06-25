@@ -29,12 +29,12 @@ The two client priorities, in order:
 The pinned hero spans ~**300vh** of scroll (tune later). `p` = scroll progress 0→1
 through the pinned section. Approximate timing:
 
-| p | Background | Centerpiece (window) | Side display text | Signature | Nav |
-|------|-----------|----------------------|-------------------|-----------|-----|
+| p | Background | Centerpiece (window) | Side display text | Logo reveal | Nav |
+|------|-----------|----------------------|-------------------|-------------|-----|
 | 0.00 | **light/near-white**, faint contour lines | full-bleed, large, centered; ambient idle motion | hidden | hidden | dark text on light |
 | 0.15 | begins lerp light→dark | drops into a **framed window**; begins to **scale down** | slides in from both side edges | hidden | inverts to light text as bg darkens |
-| 0.40 | **dark** | window noticeably smaller (letterbox) | **drifting horizontally** with scroll | **starts drawing** (stroke reveal) over the window | light |
-| 0.65 | dark | window small, slightly muted/darkened overlay | continues drifting | **fully drawn** across the window | light |
+| 0.40 | **dark** | window noticeably smaller (letterbox) | **drifting horizontally** with scroll | **letters pop in** S→K→I→M over the window | light |
+| 0.65 | dark | window small, slightly muted/darkened overlay | continues drifting | **full logo + halo + sparkles** assembled | light |
 | 0.85→1.0 | dark | window **scales/translates up and out** | exits | exits with window | light |
 | >1.0 | dark content section | — | huge headline + emblem (CLAUDE.md §6 step 5) | — | light |
 
@@ -68,10 +68,12 @@ The background **never hard-cuts** white→dark — it's a continuous lerp drive
 - **Copy is skim's own** — a short message/hype line he writes (e.g. his own "message from skim").
   Do NOT use Lando's words. Put the strings in `site.config.ts`.
 
-### D. Signature draw
-- An **SVG of skim's signature** (`/signature.svg`), revealed via **`stroke-dasharray` /
-  `stroke-dashoffset`** scrubbed from `p≈0.40` (start) to `p≈0.65` (fully drawn), in `--accent`.
-- Sits **over** the centerpiece window. Exits with the window after `p≈0.85`.
+### D. Logo reveal (letter assembly)
+- A layered **SVG wordmark** (`site.assets.logoReveal`) — four letter slices pop in
+  left-to-right (S → K → I → M), swap to the full logo, then halo drops and sparkles pop.
+  Scrubbed as a **child timeline** on the Hero's single pin from `p≈0.42` to `p≈0.70`.
+- Sits **over** the centerpiece window (face stays visible behind). Exits with the window after `p≈0.85`.
+- Reference implementation: `src/components/gsap-logo-scroll.html`.
 
 ### E. Nav inversion
 - Nav text/logo color crossfades **dark→light** as the background darkens (tie to the same `p`,
@@ -83,7 +85,7 @@ The background **never hard-cuts** white→dark — it's a continuous lerp drive
 
 **NOW (build this):** `variant="logo"` — the SKIM wordmark in the window, with idle
 float + mouse parallax, scaling down on scroll. Ship the full motion (background flip,
-window shrink, side text, signature, exit) with the logo as the subject.
+window shrink, side text, logo reveal, exit) with the logo as the subject.
 
 **EVENTUAL (scaffold hooks, don't fully build):** `variant="face"` — the **sunglasses
 frame-swap**:
@@ -147,10 +149,12 @@ tl.fromTo(windowRef.current,
 // C. side text drift in + across
 tl.fromTo(textLeftRef.current,  { xPercent: -8, autoAlpha: 0 }, { xPercent: -34, autoAlpha: 1, ease: "none" }, 0.12);
 tl.fromTo(textRightRef.current, { xPercent: 8,  autoAlpha: 0 }, { xPercent: 34,  autoAlpha: 1, ease: "none" }, 0.12);
-// D. signature draw
-tl.fromTo(sigPathRef.current,
-  { strokeDashoffset: SIG_LEN },
-  { strokeDashoffset: 0, ease: "none" }, 0.40);   // finishes ~0.65 via duration
+// D. logo reveal (child timeline)
+const logoTl = gsap.timeline();
+logoTl.to(letters, { opacity: 1, scale: 1, stagger: 0.12, duration: 0.35 }, 0);
+logoTl.set(full, { opacity: 1 }).set(letters, { opacity: 0 }, "<");
+logoTl.to(halo, { opacity: 1, scale: 1, y: 0, duration: 0.25 });
+tl.add(logoTl, 0.42);
 // E. exit
 tl.to(windowRef.current, { yPercent: -120, autoAlpha: 0, ease: "none" }, 0.85);
 ```
@@ -161,9 +165,9 @@ tl.to(windowRef.current, { yPercent: -120, autoAlpha: 0, ease: "none" }, 0.85);
 - **Fallback:** animate a CSS variable `--bg-mix` (as above) and compute the page bg with
   `color-mix(in srgb, var(--milk), var(--ink) calc(var(--bg-mix) * 100%))`.
 
-### 4.4 Signature SVG
-- Inline the `<svg>`, single `<path>`. On mount, `SIG_LEN = path.getTotalLength()`, set
-  `strokeDasharray = strokeDashoffset = SIG_LEN`, then scrub offset → 0. Color `var(--accent)`.
+### 4.4 Logo reveal SVG
+- `<LogoReveal />` renders layered `<image>` slices from `site.assets.logoReveal`.
+  Hero owns the GSAP child timeline; component exposes element refs via `useImperativeHandle`.
 
 ### 4.5 Sunglasses frame-swap (eventual, scaffold only)
 ```tsx
@@ -180,7 +184,7 @@ return frames.map((src, i) => (
 ## 5. Reduced motion / performance / mobile
 
 - `prefers-reduced-motion`: **disable the pin/scrub entirely.** Render a **static hero**:
-  dark background, centerpiece (logo/face) at its small size, signature already drawn, side
+  dark background, centerpiece (logo/face) at its small size, logo already assembled, side
   text in place. No flip, no scrub. Fully usable and calm.
 - Lazy-mount the R3F background; cap DPR ~2; pause its loop when the hero is offscreen.
 - Preload `skim-logo.png` (and the 7 face frames when `variant="face"`). Compress to WebP/AVIF.
@@ -193,7 +197,7 @@ return frames.map((src, i) => (
 
 - Pinned hero plays as **one continuous scrubbed motion**; nothing pops independently.
 - Background **lerps light→dark** with inverting contour lines; subtle mouse parallax.
-- Centerpiece **frames + scales down**, signature **draws over it**, side text **drifts**, then it **exits up** to the dark headline section.
+- Centerpiece **frames + scales down**, logo **assembles over it**, side text **drifts**, then it **exits up** to the dark headline section.
 - `variant="logo"` works now with `skim-logo.png`; `variant="face"` frame-swap is scaffolded and swappable via prop + config.
 - Reduced-motion shows a clean static hero. Mobile is smooth and readable.
 
@@ -210,7 +214,7 @@ and supersedes CLAUDE.md §7 plus the dark-only note in §3/§8.
 Implement the Phase 4 hero exactly as specified in HERO_SEQUENCE.md:
 one pinned, scroll-scrubbed GSAP timeline driven by Lenis; the ambient contour
 background that lerps light→dark; the centerpiece window that frames + scales down;
-the side display-text drift; the signature stroke draw; and the exit.
+the side display-text drift; the logo letter assembly reveal; and the exit.
 
 Build the centerpiece as <Centerpiece variant="logo"|"face" />. Use variant="logo"
 with /skim-logo.png for now, and scaffold (do not finish) the variant="face"

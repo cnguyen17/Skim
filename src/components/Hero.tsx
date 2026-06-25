@@ -5,22 +5,22 @@
 //   • background contour shader inverts milk → ink (driven via the `progress` ref)
 //   • the centerpiece "window" frames + scales down, then exits up
 //   • two side display-text rows slide in and drift horizontally
-//   • the signature draws across the window
+//   • the SKIM wordmark assembles letter-by-letter over the window
 //   • the Nav inverts (discrete light→dark flip via the heroTheme store)
 //
 // Performance/a11y (CLAUDE.md §10/§11):
 //   • the R3F canvas chunk is React.lazy + only mounts while the hero is near the
 //     viewport; scrolling past it unmounts it (render loop paused).
 //   • under reduced motion / no WebGL we render a calm STATIC hero (no pin, no
-//     scrub, no canvas): dark surface, framed centerpiece, signature drawn.
+//     scrub, no canvas): dark surface, framed centerpiece, logo assembled.
 
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { gsap, ScrollTrigger } from "../lib/gsap";
 import { site } from "../data/site.config";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { setHeroTheme } from "../lib/heroTheme";
 import { Centerpiece } from "./Centerpiece";
-import { Signature } from "./Signature";
+import { LogoReveal, type LogoRevealHandle } from "./LogoReveal";
 
 const HeroCanvas = lazy(() => import("./HeroCanvas"));
 
@@ -43,12 +43,13 @@ export function Hero() {
 
   // animation targets
   const floatRef = useRef<HTMLDivElement | null>(null);
-  const parallaxRef = useRef<HTMLDivElement | null>(null);
   const windowRef = useRef<HTMLDivElement | null>(null);
+  const subjectRef = useRef<HTMLDivElement | null>(null);
+  const shadeRef = useRef<HTMLDivElement | null>(null);
   const textTopRef = useRef<HTMLDivElement | null>(null);
   const textBotRef = useRef<HTMLDivElement | null>(null);
   const foreRef = useRef<HTMLDivElement | null>(null);
-  const sigRef = useRef<SVGPathElement | null>(null);
+  const logoRevealRef = useRef<LogoRevealHandle | null>(null);
 
   const [nearView, setNearView] = useState(false);
   const use3D = !reducedMotion && webglAvailable();
@@ -68,7 +69,7 @@ export function Hero() {
 
   // The one pinned, scrubbed timeline. Static (no pin) under reduced motion / no
   // WebGL — the hero then opens dark with the Nav in its default dark theme.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!use3D) {
       setHeroTheme("dark");
       return;
@@ -86,87 +87,116 @@ export function Hero() {
       getComputedStyle(document.documentElement).getPropertyValue("--hero-frame").trim() ||
       "rgba(88,215,255,0.55)";
 
+    // Lando-style: the portrait OPENS full-bleed (entire viewport), then the whole
+    // screen minimizes to a centered letterbox. One frame — not a box on a bg.
+    const openW = () => section.clientWidth || window.innerWidth;
+    const openH = () => section.clientHeight || window.innerHeight;
+    const smallW = () => Math.min(window.innerWidth * 0.62, 760);
+    const smallH = () => smallW() * (9 / 16); // 16:9 letterbox
+
+    const FRAME_END = 0.45;
+    const LOGO_START = 0.50;
+    const EXIT_START = 0.92;
+
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
         defaults: { ease: "none" },
         scrollTrigger: {
           trigger: section,
           start: "top top",
-          end: "+=300%", // ~300vh pinned scroll (HERO_SEQUENCE §1)
+          end: "+=400%",
           scrub: true,
           pin: true,
+          invalidateOnRefresh: true,
           onUpdate: (self) => {
             progress.current = self.progress;
-            // discrete Nav flip around the bg midpoint (no per-frame React state)
-            setHeroTheme(self.progress < 0.25 ? "light" : "dark");
+            setHeroTheme(self.progress < 0.22 ? "light" : "dark");
           },
         },
       });
 
       // Foreground (handle + scroll cue) fades out first.
-      tl.to(foreRef.current, { autoAlpha: 0, duration: 0.18 }, 0);
+      tl.to(foreRef.current, { autoAlpha: 0, duration: 0.14 }, 0);
 
-      // Centerpiece window: frame + scale down, then exit up.
+      // Full viewport → centered letterbox. The shader reads this rect live, so
+      // the contour bg darkens around the edges as the "page" zooms out.
       tl.fromTo(
         windowRef.current,
-        { scale: 1.15 },
-        { scale: 0.46, duration: 0.82 },
+        { width: openW, height: openH },
+        { width: smallW, height: smallH, duration: FRAME_END },
         0,
       );
       tl.fromTo(
         windowRef.current,
         { borderColor: "rgba(88,215,255,0)", borderRadius: 0 },
-        { borderColor: frameColor, borderRadius: 12, duration: 0.18 },
+        { borderColor: frameColor, borderRadius: 12, duration: 0.16 },
         0.12,
       );
-      tl.to(windowRef.current, { yPercent: -120, autoAlpha: 0, duration: 0.15 }, 0.85);
 
-      // Side display text (HERO_SEQUENCE §2C), restacked top/bottom so it always
-      // fits the viewport width: "turn it up" up top, the credit line at the
-      // bottom; both fade in, then rise and scroll up/out as the hero zooms.
-      tl.fromTo(textTopRef.current, { yPercent: 90, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.12 }, 0.08);
-      tl.to(textTopRef.current, { yPercent: -170, autoAlpha: 0, duration: 0.62 }, 0.28);
+      // Subtle scale as letterbox forms — object-contain keeps head + shoulders uncropped.
+      const { scaleOpen, scaleClosed } = site.hero.faceFraming;
+      tl.fromTo(
+        subjectRef.current,
+        { scale: scaleOpen, yPercent: 0 },
+        { scale: scaleClosed, yPercent: 0, duration: FRAME_END },
+        0,
+      );
 
-      tl.fromTo(textBotRef.current, { yPercent: -90, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.12 }, 0.08);
-      tl.to(textBotRef.current, { yPercent: -210, autoAlpha: 0, duration: 0.62 }, 0.28);
+      // Studio shade on transparent PNG edges — only once off full-bleed.
+      tl.fromTo(shadeRef.current, { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0.14);
 
-      // Signature draws across the window (it's a child of the window, so it
-      // scales + exits with it). Drawn p 0.40 → 0.65.
-      const sig = sigRef.current;
-      if (sig) {
-        const len = sig.getTotalLength();
-        tl.fromTo(
-          sig,
-          { strokeDashoffset: len },
-          { strokeDashoffset: 0, duration: 0.3 },
-          0.42,
+      // Side display text — fade in early, exit before logo lands.
+      tl.fromTo(textTopRef.current, { yPercent: 90, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.1 }, 0.06);
+      tl.to(textTopRef.current, { yPercent: -170, autoAlpha: 0, duration: 0.34 }, 0.22);
+
+      tl.fromTo(textBotRef.current, { yPercent: -90, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.1 }, 0.06);
+      tl.to(textBotRef.current, { yPercent: -210, autoAlpha: 0, duration: 0.34 }, 0.22);
+
+      // Logo reveal: letters → full → halo → sparkles. Child tl duration is
+      // capped at 0.36 so it fully completes by ~0.86, then a hold before exit.
+      const logo = logoRevealRef.current;
+      if (logo?.group && logo.letters.length === 4 && logo.full && logo.halo && logo.sparkles) {
+        const { group, letters, full, halo, sparkles } = logo;
+
+        letters.forEach((el) => {
+          const ox = el.dataset.ox ?? "0";
+          const oy = el.dataset.oy ?? "0";
+          gsap.set(el, { opacity: 0, scale: 0.55, svgOrigin: `${ox} ${oy}` });
+        });
+        gsap.set(full, { opacity: 0 });
+        gsap.set(halo, { opacity: 0, scale: 0.3, y: -50, svgOrigin: "298 43" });
+        gsap.set(sparkles, { opacity: 0, scale: 0, svgOrigin: "347 12" });
+        gsap.set(group, { scale: 1, svgOrigin: "243 128" });
+
+        const logoTl = gsap.timeline();
+        logoTl.to(
+          letters,
+          { opacity: 1, scale: 1, ease: "back.out(2.2)", stagger: 0.05, duration: 0.09 },
+          0,
         );
+        logoTl.set(full, { opacity: 1 }, 0.22);
+        logoTl.set(letters, { opacity: 0 }, 0.22);
+        logoTl.to(
+          halo,
+          { opacity: 1, scale: 1, y: 0, ease: "elastic.out(1, 0.5)", duration: 0.1 },
+          0.22,
+        );
+        logoTl.to(
+          sparkles,
+          { opacity: 1, scale: 1, ease: "back.out(2.5)", duration: 0.08 },
+          0.28,
+        );
+        logoTl.to(group, { scale: 1.05, duration: 0.04, ease: "power2.out" }, 0.32);
+        logoTl.to(group, { scale: 1, duration: 0.06, ease: "elastic.out(1, 0.6)" }, 0.36);
+
+        tl.add(logoTl, LOGO_START);
       }
 
-      // Idle float on the centerpiece (independent of scroll).
-      gsap.to(floatRef.current, {
-        y: 14,
-        duration: 3.2,
-        ease: "sine.inOut",
-        yoyo: true,
-        repeat: -1,
-      });
-
-      // Subtle mouse parallax on the centerpiece.
-      const px = gsap.quickTo(parallaxRef.current, "x", { duration: 0.6, ease: "power2.out" });
-      const py = gsap.quickTo(parallaxRef.current, "y", { duration: 0.6, ease: "power2.out" });
-      const onMove = (e: PointerEvent) => {
-        const nx = (e.clientX / window.innerWidth - 0.5) * 2;
-        const ny = (e.clientY / window.innerHeight - 0.5) * 2;
-        px(nx * 16);
-        py(ny * 16);
-      };
-      window.addEventListener("pointermove", onMove);
+      // Exit up — only after logo has finished assembling.
+      tl.to(windowRef.current, { yPercent: -120, autoAlpha: 0, duration: 0.08 }, EXIT_START);
 
       // Pin geometry depends on the display font; re-measure once it's ready.
       document.fonts?.ready.then(() => ScrollTrigger.refresh());
-
-      return () => window.removeEventListener("pointermove", onMove);
     }, section);
 
     return () => {
@@ -217,23 +247,34 @@ export function Hero() {
         </div>
       )}
 
-      {/* Centerpiece: idle float → mouse parallax → scroll-driven window */}
-      <div className="absolute inset-0 z-20 flex items-center justify-center">
-        <div ref={floatRef}>
-          <div ref={parallaxRef}>
+      {/* Full-bleed stage → minimizes to center on scroll (Lando-style) */}
+      <div className="absolute inset-0 z-20">
+        <div ref={floatRef} className="absolute inset-0 flex items-center justify-center">
+          <div
+            ref={windowRef}
+            className={`relative overflow-hidden border will-change-[width,height] ${
+              use3D
+                ? "h-full w-full border-transparent"
+                : "scale-[0.62] rounded-xl border-[color:var(--hero-frame)]"
+            }`}
+          >
             <div
-              ref={windowRef}
-              className={`relative flex aspect-[16/10] w-[80vmin] max-w-[680px] items-center justify-center overflow-hidden border will-change-transform ${
-                use3D
-                  ? "scale-[1.15] border-transparent" // timeline takes over from here
-                  : "scale-[0.6] rounded-xl border-[color:var(--hero-frame)]" // calm static frame
-              }`}
-            >
-              <Centerpiece variant={site.hero.centerpiece} progress={progress} />
-              {/* Signature draws across the WHOLE logo as the window zooms out */}
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <Signature ref={sigRef} drawn={!use3D} className="h-auto w-[86%] text-accent" />
-              </div>
+              ref={shadeRef}
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_30%,rgba(247,242,232,0)_35%,rgba(15,14,12,0.12)_72%,rgba(15,14,12,0.28)_100%)] opacity-0"
+            />
+            <Centerpiece
+              ref={subjectRef}
+              variant={site.hero.centerpiece}
+              progress={progress}
+              settled={!use3D}
+            />
+            {/* Logo assembles over the framed face as the window zooms out */}
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <LogoReveal
+                ref={logoRevealRef}
+                assembled={!use3D}
+                className="h-auto w-[86%] drop-shadow-[0_0_30px_rgba(88,215,255,0.2)]"
+              />
             </div>
           </div>
         </div>

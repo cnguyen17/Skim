@@ -12,7 +12,18 @@ export const site = {
   assets: {
     logo:      "/skim-logo.png",  // PROVIDED — SKIM wordmark (nav + loader)
     mascot:    "/bear.svg",       // bear-with-milk — 3D hero (owner provides)
-    signature: "/signature.svg",  // signature for scroll reveal (owner provides)
+    signature: "/signature.svg",  // legacy — replaced by logoReveal in hero
+    logoReveal: {
+      full:     "/images/logo/full.png",
+      letters:  [
+        "/images/logo/letter-s.png",
+        "/images/logo/letter-k.png",
+        "/images/logo/letter-i.png",
+        "/images/logo/letter-m.png",
+      ],
+      halo:     "/images/logo/halo.png",
+      sparkles: "/images/logo/sparkles.png",
+    },
   },
 
   // Scroll-driven hero (HERO_SEQUENCE.md). `centerpiece` is "logo" now and
@@ -20,9 +31,30 @@ export const site = {
   // `message` is the side display text drifting through the hero — skim's OWN
   // words (not Lando's). Edit these here, never in the component.
   hero: {
-    centerpiece: "logo" as "logo" | "face",
+    centerpiece: "face" as "logo" | "face",
     message: ["turn it up", "prod. skim · dj skim"], // TODO: skim's own hype line
-    faceFrames: [] as string[], // variant="face" later: "/images/face/01.webp" …
+    // variant="face": aligned transparent-PNG cutouts of the same face, each with
+    // different sunglasses. Sorted by filename; the glasses cycle through all of
+    // these on scroll and settle on `settleFrame`.
+    faceFrames: [
+      "/images/sets/Skim/face-01.png",
+      "/images/sets/Skim/face-02.png",
+      "/images/sets/Skim/face-03.png",
+      "/images/sets/Skim/face-04.png",
+      "/images/sets/Skim/face-05.png",
+      "/images/sets/Skim/face-07.png",
+      "/images/sets/Skim/face-08.png",
+      "/images/sets/Skim/face-09.png",
+    ] as string[],
+    settleFrame: 7, // index the cycle eases to / lands on (default: last frame)
+    // Framing for 683×683 aligned face PNGs. object-contain = no crop; full head
+    // + shoulders always visible. Scale nudges slightly on scroll as letterbox forms.
+    faceFraming: {
+      objectFit: "contain" as const,
+      objectPosition: "50% 50%",
+      scaleOpen: 1,
+      scaleClosed: 1.06,
+    },
   },
 
   socials: {
