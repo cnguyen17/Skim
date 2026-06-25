@@ -14,6 +14,15 @@
   --mid:      #9AA1AD;           /* muted secondary text */
   --line:     rgba(247, 242, 232, 0.14);
 
+  /* Hero scroll narrative (HERO_SEQUENCE.md) — the opening is LIGHT and flips to
+   * ink as you scroll. These are scoped to the hero; the rest of the site stays
+   * on --ink. The contour-line shader and the centerpiece frame read these. */
+  --hero-surface:  #F7F2E8;                  /* milk — opening background */
+  --hero-ink:      #0F0E0C;                  /* text on the light opening */
+  --hero-line-lo:  rgba(15, 14, 12, 0.22);   /* contour lines on light bg */
+  --hero-line-hi:  rgba(247, 242, 232, 0.16);/* contour lines on dark bg */
+  --hero-frame:    rgba(88, 215, 255, 0.55); /* centerpiece window frame (cyan) */
+
   /* Type — free Google Fonts (§3) */
   --font-display: "Anton", Impact, sans-serif;
   --font-body:    "Inter", system-ui, sans-serif;
@@ -30,6 +39,9 @@
   --color-accent-2: var(--accent-2);
   --color-mid: var(--mid);
   --color-line: var(--line);
+  --color-hero-surface: var(--hero-surface);
+  --color-hero-ink: var(--hero-ink);
+  --color-hero-frame: var(--hero-frame);
 
   --font-display: var(--font-display);
   --font-body: var(--font-body);

@@ -15,6 +15,16 @@ export const site = {
     signature: "/signature.svg",  // signature for scroll reveal (owner provides)
   },
 
+  // Scroll-driven hero (HERO_SEQUENCE.md). `centerpiece` is "logo" now and
+  // becomes "face" once skim provides the aligned sunglasses frames below.
+  // `message` is the side display text drifting through the hero — skim's OWN
+  // words (not Lando's). Edit these here, never in the component.
+  hero: {
+    centerpiece: "logo" as "logo" | "face",
+    message: ["turn it up", "prod. skim · dj skim"], // TODO: skim's own hype line
+    faceFrames: [] as string[], // variant="face" later: "/images/face/01.webp" …
+  },
+
   socials: {
     instagram:  "https://www.instagram.com/mynameizskim",
     tiktok:     "https://www.tiktok.com/@mynameizskim",
