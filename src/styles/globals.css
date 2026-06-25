@@ -58,6 +58,61 @@ html.lenis body {
   overflow: clip;
 }
 
+/* ---- Signature roll text (§3) ------------------------------------------- */
+.roll {
+  display: inline-flex;
+  overflow: hidden;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+.roll .rl {
+  position: relative;
+  color: transparent;
+}
+.roll .rl::before,
+.roll .rl::after {
+  content: attr(data-char);
+  position: absolute;
+  left: 0;
+  color: currentColor;
+  transition: transform 0.3s cubic-bezier(0.6, 0, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 18ms);
+  white-space: pre;
+}
+.roll .rl::before {
+  transform: translateY(0);
+}
+.roll .rl::after {
+  transform: translateY(110%);
+}
+.roll:hover .rl::before,
+.roll:focus-visible .rl::before,
+a:hover .roll .rl::before,
+a:focus-visible .roll .rl::before {
+  transform: translateY(-110%);
+}
+.roll:hover .rl::after,
+.roll:focus-visible .rl::after,
+a:hover .roll .rl::after,
+a:focus-visible .roll .rl::after {
+  transform: translateY(0);
+}
+
+/* ---- Reveal (§8) -------------------------------------------------------- */
+/* JS adds .is-in when the element scrolls into view (see Reveal.tsx). */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s cubic-bezier(0.2, 0.6, 0.2, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
 /* ---- Reduced motion (§8 / §11) ------------------------------------------ */
 /* A real fallback: kill transitions/animations, re-enable native scrolling.
  * Lenis itself is disabled in JS (see LenisProvider); this is the CSS half. */
@@ -72,5 +127,10 @@ html.lenis body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+  /* Never leave reveal content stuck hidden when motion is off. */
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

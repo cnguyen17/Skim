@@ -1,39 +1,54 @@
 // src/components/LenisProvider.tsx
-// §8 smooth scroll. Wraps the app in Lenis and runs its RAF loop.
-// §11: when prefers-reduced-motion is set, Lenis is NOT initialized — native
-// scrolling stays on so the page is calm and fully usable.
+// §8 smooth scroll. Wraps the app in Lenis, runs its RAF loop off the GSAP
+// ticker, and feeds Lenis scroll into ScrollTrigger so scroll-linked animation
+// stays in sync with the smoothed scroll position.
 //
-// Phase 2 will feed `lenis.on('scroll', ScrollTrigger.update)` here once GSAP
-// ScrollTrigger is wired. For Phase 1 this just establishes the smooth-scroll
-// base and the reduced-motion gate.
+// §11: under prefers-reduced-motion, Lenis is NOT initialized — native scroll
+// stays on, ScrollTrigger still works against the native scroller, and the page
+// is calm and fully usable.
 
-import { useEffect, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import Lenis from "lenis";
+import { gsap, ScrollTrigger } from "../lib/gsap";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+
+const LenisContext = createContext<Lenis | null>(null);
+
+/** Access the live Lenis instance (null under reduced motion or before mount). */
+export function useLenis() {
+  return useContext(LenisContext);
+}
 
 export function LenisProvider({ children }: { children: ReactNode }) {
   const reducedMotion = useReducedMotion();
+  const [lenis, setLenis] = useState<Lenis | null>(null);
 
   useEffect(() => {
-    if (reducedMotion) return; // §11 — skip Lenis entirely under reduced motion
+    if (reducedMotion) {
+      // Make sure any triggers measured during a smooth session still work.
+      ScrollTrigger.refresh();
+      return;
+    }
 
-    const lenis = new Lenis({
-      duration: 1.1,
-      smoothWheel: true,
-    });
+    const instance = new Lenis({ duration: 1.1, smoothWheel: true });
+    setLenis(instance);
 
-    let rafId = 0;
-    const raf = (time: number) => {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
-    };
-    rafId = requestAnimationFrame(raf);
+    instance.on("scroll", ScrollTrigger.update);
+
+    const onTick = (time: number) => instance.raf(time * 1000);
+    gsap.ticker.add(onTick);
+    gsap.ticker.lagSmoothing(0);
+
+    // Lenis changes document height as it settles; keep triggers accurate.
+    ScrollTrigger.refresh();
 
     return () => {
-      cancelAnimationFrame(rafId);
-      lenis.destroy();
+      gsap.ticker.remove(onTick);
+      instance.off("scroll", ScrollTrigger.update);
+      instance.destroy();
+      setLenis(null);
     };
   }, [reducedMotion]);
 
-  return <>{children}</>;
+  return <LenisContext.Provider value={lenis}>{children}</LenisContext.Provider>;
 }
