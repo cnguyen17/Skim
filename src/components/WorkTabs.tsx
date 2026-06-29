@@ -1,21 +1,42 @@
 // src/components/WorkTabs.tsx
-// §6 work toggle — DJ Sets / Producing / Collaborations. Accessible tabs
-// (role=tablist/tab/tabpanel, arrow-key navigation). All content comes from
-// site.config (§0). Empty categories show a calm, directive empty state.
+// §6 work toggle — DJ Sets / Producing. Accessible tabs (role=tablist/tab/
+// tabpanel, arrow-key navigation). All content comes from site.config (§0).
+// Empty categories show a calm, directive empty state. Collaborations is now its
+// own standalone section (see Collaborations.tsx), no longer a tab here.
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { site } from "../data/site.config";
 import { VideoCard } from "./VideoCard";
 import { SpotifyEmbed } from "./SpotifyEmbed";
 import { Reveal } from "./Reveal";
 
-const TABS = ["DJ Sets", "Producing", "Collaborations"] as const;
+const TABS = ["DJ Sets", "Producing"] as const;
 type Tab = (typeof TABS)[number];
 
+const TAB_BY_HASH: Record<string, Tab> = {
+  work: "DJ Sets",
+  "work-producing": "Producing",
+};
+
+function tabFromHash(): Tab | null {
+  const hash = window.location.hash.replace(/^#/, "");
+  return TAB_BY_HASH[hash] ?? null;
+}
+
 export function WorkTabs() {
-  const [active, setActive] = useState<Tab>("DJ Sets");
+  const [active, setActive] = useState<Tab>(() => tabFromHash() ?? "DJ Sets");
   const baseId = useId();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  useEffect(() => {
+    const sync = () => {
+      const tab = tabFromHash();
+      if (tab) setActive(tab);
+    };
+    sync();
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
 
   const onKeyDown = (e: React.KeyboardEvent, i: number) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
@@ -28,8 +49,9 @@ export function WorkTabs() {
 
   return (
     <div>
-      {/* Tablist */}
+      {/* Tablist — scroll anchor for #work (tabs + rule sit flush under the nav) */}
       <div
+        id="work"
         role="tablist"
         aria-label="Work"
         className="flex flex-wrap gap-x-8 gap-y-2 border-b border-line"
@@ -94,23 +116,6 @@ export function WorkTabs() {
                     </Reveal>
                   ))}
                 </div>
-              )}
-
-              {tab === "Collaborations" && (
-                <Reveal>
-                  <div className="rounded-xl border border-dashed border-line bg-ink-2 p-10 text-center">
-                    <p className="font-display text-2xl uppercase text-milk">
-                      More on the way
-                    </p>
-                    <p className="mt-2 font-body text-sm text-mid">
-                      Sets and skits skim produced for others. Want to collaborate?{" "}
-                      <a href="/booking" className="text-accent underline-offset-4 hover:underline">
-                        Get in contact
-                      </a>
-                      .
-                    </p>
-                  </div>
-                </Reveal>
               )}
             </div>
           );

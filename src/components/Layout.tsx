@@ -3,11 +3,13 @@
 // Footer. The Loader (first-load intro) is mounted here too so it overlays the
 // whole shell.
 
-import { Suspense } from "react";
-import { Outlet } from "react-router-dom";
+import { Suspense, useEffect } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import { Nav } from "./Nav";
 import { Footer } from "./Footer";
 import { Loader } from "./Loader";
+import { useLenis } from "./LenisProvider";
+import { scrollToSection } from "../lib/scrollToSection";
 
 function PageFallback() {
   return (
@@ -18,6 +20,16 @@ function PageFallback() {
 }
 
 export function Layout() {
+  const location = useLocation();
+  const lenis = useLenis();
+
+  // Scroll to #bio, #work, etc. after route changes (e.g. menu from /booking → /#bio).
+  useEffect(() => {
+    const hash = location.hash.replace(/^#/, "");
+    if (!hash) return;
+    scrollToSection(hash, lenis);
+  }, [location.pathname, location.hash, lenis]);
+
   return (
     <>
       <a

@@ -12,6 +12,12 @@ const Home = lazy(() => import("./routes/Home"));
 const Sets = lazy(() => import("./routes/Sets"));
 const Equipment = lazy(() => import("./routes/Equipment"));
 const Booking = lazy(() => import("./routes/Booking"));
+// TEMP (Part A verification) — remove with /_label route once label is confirmed.
+const LabelPreview = lazy(() => import("./routes/LabelPreview"));
+// TEMP (Part B tuning) — remove with /_bear route once the scene is confirmed.
+const BearPreview = lazy(() => import("./routes/BearPreview"));
+// TEMP (model orientation diag) — remove with /_model route once scene is dialed.
+const ModelDiag = lazy(() => import("./routes/ModelDiag"));
 
 export default function App() {
   return (
@@ -24,6 +30,12 @@ export default function App() {
             <Route path="/equipment" element={<Equipment />} />
             <Route path="/booking" element={<Booking />} />
           </Route>
+          {/* TEMP (Part A verification) — standalone, no Layout. Remove later. */}
+          <Route path="/_label" element={<LabelPreview />} />
+          {/* TEMP (Part B tuning) — standalone, no Layout. Remove later. */}
+          <Route path="/_bear" element={<BearPreview />} />
+          {/* TEMP (model orientation diag) — remove later. */}
+          <Route path="/_model" element={<ModelDiag />} />
         </Routes>
       </LenisProvider>
     </BrowserRouter>

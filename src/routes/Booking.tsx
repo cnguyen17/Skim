@@ -1,17 +1,22 @@
 // src/routes/Booking.tsx — §2/§9 contact paths: book a DJ set, a general
 // meeting, or an equipment request. Cal.com handles scheduling; Web3Forms
 // handles the message. No backend.
+import { useState } from "react";
 import { BookingEmbed } from "../components/BookingEmbed";
 import { ContactForm } from "../components/ContactForm";
 import { Reveal } from "../components/Reveal";
+import { isBookingConfigured } from "../lib/booking";
+import { site } from "../data/site.config";
 
-const SERVICES = [
-  { title: "Book a DJ set", note: "Parties, clubs, events — pick a time." },
-  { title: "General meeting", note: "Collabs, production, or just a chat." },
-  { title: "Equipment + setup", note: "Rent his gear; he can set it up." },
-];
+const EVENTS = site.booking.events;
+type EventId = (typeof EVENTS)[number]["id"];
 
 export default function Booking() {
+  const [activeId, setActiveId] = useState<EventId>(EVENTS[0]?.id ?? "dj-set");
+  const active = EVENTS.find((e) => e.id === activeId) ?? EVENTS[0];
+  const eventSlug =
+    active && isBookingConfigured(active.slug) ? active.slug : undefined;
+
   return (
     <div className="pt-28">
       <div className="mx-auto max-w-6xl px-5 pb-24 sm:px-8 lg:pb-32">
@@ -26,28 +31,41 @@ export default function Booking() {
           </h1>
         </Reveal>
 
-        {/* Three services */}
-        <div className="mt-12 grid gap-4 sm:grid-cols-3">
-          {SERVICES.map((s, i) => (
-            <Reveal key={s.title} delay={i * 0.05}>
-              <div className="h-full rounded-xl border border-line bg-ink-2 p-6">
-                <p className="font-display text-xl uppercase text-milk">{s.title}</p>
-                <p className="mt-2 font-body text-sm text-mid">{s.note}</p>
-              </div>
-            </Reveal>
-          ))}
+        {/* Three services — pick which Cal.com event type to embed */}
+        <div className="mt-12 grid gap-4 sm:grid-cols-3" role="tablist" aria-label="Booking type">
+          {EVENTS.map((event, i) => {
+            const selected = event.id === activeId;
+            return (
+              <Reveal key={event.id} delay={i * 0.05}>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => setActiveId(event.id)}
+                  className={`h-full w-full rounded-xl border p-6 text-left transition-colors ${
+                    selected
+                      ? "border-accent bg-accent/5"
+                      : "border-line bg-ink-2 hover:border-accent/40"
+                  }`}
+                >
+                  <p className="font-display text-xl uppercase text-milk">{event.title}</p>
+                  <p className="mt-2 font-body text-sm text-mid">{event.note}</p>
+                </button>
+              </Reveal>
+            );
+          })}
         </div>
 
         {/* Scheduler */}
         <div className="mt-20 grid gap-12 lg:grid-cols-2">
-          <div>
+          <div role="tabpanel" aria-label={active?.title}>
             <Reveal>
               <h2 className="mb-6 font-display text-3xl uppercase text-milk">
                 Pick a time
               </h2>
             </Reveal>
             <Reveal>
-              <BookingEmbed />
+              <BookingEmbed eventSlug={eventSlug} />
             </Reveal>
           </div>
 
@@ -58,7 +76,7 @@ export default function Booking() {
               </h2>
             </Reveal>
             <Reveal>
-              <ContactForm subject="New booking enquiry — skim.site" />
+              <ContactForm subject={`New booking enquiry (${active?.title ?? "skim"}) — skim.site`} />
             </Reveal>
           </div>
         </div>

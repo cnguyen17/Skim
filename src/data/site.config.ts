@@ -8,6 +8,12 @@ export const site = {
   tagline: "prod. skim | dj skim",
   blurb: "DJ and producer. Bear holding skim milk, because — skim.",
 
+  // Primary CTAs — labels + routes (Nav, ContactCTA, etc.)
+  ctas: {
+    booking: { label: "Schedule booking", to: "/booking" },
+    equipment: { label: "Equipment rental", to: "/equipment" },
+  },
+
   // Brand assets
   assets: {
     logo:      "/skim-logo.png",  // PROVIDED — SKIM wordmark (nav + loader)
@@ -32,7 +38,11 @@ export const site = {
   // words (not Lando's). Edit these here, never in the component.
   hero: {
     centerpiece: "face" as "logo" | "face",
-    message: ["turn it up", "prod. skim · dj skim"], // TODO: skim's own hype line
+    // Final hero frame copy (end of the scrubbed sequence). Strings only — the
+    // styling/animation live in Hero.tsx. The sub line is rendered from
+    // `site.handle` (shown as @MYNAMEIZSKIM via CSS uppercase), so the handle
+    // stays a single source of truth.
+    outro: { headline: "WELCOME TO THE FRIDGE" },
     // variant="face": aligned transparent-PNG cutouts of the same face, each with
     // different sunglasses. Sorted by filename; the glasses cycle through all of
     // these on scroll and settle on `settleFrame`.
@@ -66,17 +76,27 @@ export const site = {
 
   // DJ sets (YouTube video IDs)
   sets: [
-    { id: "blFw202KP9k", title: "TODO set title" },
-    { id: "ndCgRAfnuYk", title: "TODO set title" },
-    { id: "VXxkAAP2G9E", title: "TODO set title" },
-    { id: "3JTcG711GcA", title: "TODO set title" },
+    { id: "blFw202KP9k", title: "Birthday Mix 2025" },
+    { id: "ndCgRAfnuYk", title: "In Night of R&B" },
+    { id: "VXxkAAP2G9E", title: "Poolside Set" },
+    { id: "3JTcG711GcA", title: "Hip Hop Set" },
   ],
 
   // Production credits
   producing: [
-    { type: "spotify", id: "6NVrIy22BHf8CybljCdohU", title: "TODO track" },
-    { type: "youtube", id: "1ots2rodrq0",            title: "TODO track" },
+    { type: "spotify", id: "6NVrIy22BHf8CybljCdohU", title: "Crush Lounge Rework" },
+    { type: "youtube", id: "1ots2rodrq0",            title: "Reset by Cadabloo feat. DJ Skim" },
   ],
+
+  // Collaborations — sets & skits skim produced for others. Its own standalone
+  // section on Home (no longer bundled under the Work tabs). Reuses the media
+  // embeds; empty until skim lists credits here.
+  collaborations: [] as {
+    type: "youtube" | "spotify";
+    id: string;
+    title: string;
+    role?: string;
+  }[],
 
   // Set photos for the filterable gallery
   // gallery: [{ src: "/images/sets/xxx.webp", set: "the-pool", alt: "..." }, ...]
@@ -88,7 +108,30 @@ export const site = {
   ],
 
   booking: {
-    calcomUser: "TODO-calcom-username",   // create at cal.com (free)
-    web3formsKey: "TODO-web3forms-access-key", // get free key at web3forms.com
+    // Override via VITE_CALCOM_USER / VITE_WEB3FORMS_KEY in .env.local (see .env.example).
+    calcomUser: "TODO-calcom-username", // e.g. "skim" → cal.com/skim
+    web3formsKey: "TODO-web3forms-access-key", // free key at web3forms.com
+    // One Cal.com event type per service. Slug = URL segment after the username
+    // (cal.com/{username}/{slug}). Leave TODO until event types exist in Cal.com.
+    events: [
+      {
+        id: "dj-set",
+        title: "Book a DJ set",
+        note: "Parties, clubs, events — pick a time.",
+        slug: "TODO-dj-set-slug", // e.g. "dj-set"
+      },
+      {
+        id: "meeting",
+        title: "General meeting",
+        note: "Collabs, production, or just a chat.",
+        slug: "TODO-meeting-slug", // e.g. "30min" or "general-meeting"
+      },
+      {
+        id: "equipment",
+        title: "Equipment + setup",
+        note: "Rent his gear; he can set it up.",
+        slug: "TODO-equipment-slug", // e.g. "equipment-rental"
+      },
+    ],
   },
 } as const;

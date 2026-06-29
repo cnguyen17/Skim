@@ -7,12 +7,9 @@
 // aria-live, and disabled/aria-busy states while sending.
 
 import { useState } from "react";
-import { site } from "../data/site.config";
+import { getWeb3formsKey, web3formsReady } from "../lib/booking";
 
 type Status = "idle" | "submitting" | "success" | "error";
-
-const KEY = site.booking.web3formsKey;
-const CONFIGURED = !!KEY && !KEY.startsWith("TODO");
 
 export function ContactForm({ subject = "New message from skim.site" }: { subject?: string }) {
   const [status, setStatus] = useState<Status>("idle");
@@ -20,13 +17,13 @@ export function ContactForm({ subject = "New message from skim.site" }: { subjec
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!CONFIGURED) return;
+    if (!web3formsReady) return;
     setStatus("submitting");
     setError("");
 
     const form = e.currentTarget;
     const data = new FormData(form);
-    data.append("access_key", KEY);
+    data.append("access_key", getWeb3formsKey());
     data.append("subject", subject);
 
     try {
@@ -53,9 +50,9 @@ export function ContactForm({ subject = "New message from skim.site" }: { subjec
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {!CONFIGURED && (
+      {!web3formsReady && (
         <p className="rounded-lg border border-accent-2/40 bg-accent-2/10 px-4 py-3 font-mono text-xs uppercase tracking-[0.15em] text-accent-2">
-          Form not yet configured — add a Web3Forms key in site.config.
+          Form not yet configured — add a Web3Forms key in site.config or .env.local.
         </p>
       )}
 
@@ -107,7 +104,7 @@ export function ContactForm({ subject = "New message from skim.site" }: { subjec
       <div className="flex items-center gap-4">
         <button
           type="submit"
-          disabled={!CONFIGURED || status === "submitting"}
+          disabled={!web3formsReady || status === "submitting"}
           aria-busy={status === "submitting"}
           className="rounded-full bg-accent px-6 py-3 font-mono text-xs uppercase tracking-[0.2em] text-ink transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
         >

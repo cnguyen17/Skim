@@ -5,24 +5,15 @@
 // roles, interests. This is the brand's reinterpretation of the telemetry/data
 // motif, not generic numbering.
 
-import { site } from "../data/site.config";
 import { Reveal } from "./Reveal";
-
-const FACTS: { label: string; value: string; big?: boolean }[] = [
-  { label: "Serving size", value: "1 set" },
-  { label: "Roles", value: "DJ · Producer", big: true },
-  { label: "Genres", value: "Hip-Hop · R&B · Amapiano · Bass House" },
-  { label: "Energy", value: "Party · Confident · Clean" },
-  { label: "Off the decks", value: "Golf · Music · Health" },
-  { label: "Handle", value: `@${site.handle}` },
-];
+import { BioCarton } from "./BioCarton";
 
 export function Bio() {
   return (
-    <section id="bio" className="border-t border-line">
-      <div className="mx-auto grid max-w-6xl gap-12 px-5 py-24 sm:px-8 lg:grid-cols-[1.2fr_0.8fr] lg:py-32">
+    <section id="bio" className="overflow-visible border-t border-line">
+      <div className="relative mx-auto grid max-w-[90rem] grid-cols-1 gap-y-10 px-5 pt-14 sm:px-8 lg:grid-cols-[minmax(0,1fr)_780px] lg:items-stretch lg:gap-x-8 lg:pt-16">
         {/* Story */}
-        <div>
+        <div className="pb-20 lg:pr-2 lg:pb-24">
           <Reveal>
             <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent">
               Get to know him
@@ -49,44 +40,13 @@ export function Bio() {
           </Reveal>
         </div>
 
-        {/* Nutrition Facts panel — signature device */}
-        <Reveal className="lg:pt-2" delay={0.05}>
-          <div className="rounded-xl border-2 border-milk bg-milk text-ink">
-            <div className="border-b-[6px] border-ink px-5 pb-2 pt-4">
-              <p className="font-display text-3xl uppercase leading-none">
-                Nutrition Facts
-              </p>
-              <p className="mt-1 font-mono text-[0.7rem] uppercase tracking-[0.15em] text-ink/70">
-                Per 1 night · {site.tagline}
-              </p>
-            </div>
-            <dl className="px-5 py-2">
-              {FACTS.map((f, i) => (
-                <div
-                  key={f.label}
-                  className={`flex items-baseline justify-between gap-4 py-2 ${
-                    i < FACTS.length - 1 ? "border-b border-ink/20" : ""
-                  }`}
-                >
-                  <dt className="font-mono text-[0.7rem] uppercase tracking-[0.15em] text-ink/70">
-                    {f.label}
-                  </dt>
-                  <dd
-                    className={`text-right ${
-                      f.big
-                        ? "font-display text-lg uppercase"
-                        : "font-body text-sm font-medium"
-                    }`}
-                  >
-                    {f.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            <p className="border-t-[6px] border-ink px-5 py-3 font-mono text-[0.65rem] uppercase tracking-[0.15em] text-ink/70">
-              * Best served loud. Contains no actual dairy.
-            </p>
-          </div>
+        {/* Bear sticker — bottom-anchored 780×800 stage; grows upward so feet stay put
+            while the head can reach toward the hero. */}
+        <Reveal
+          className="relative z-10 flex w-full flex-col justify-end self-stretch overflow-visible lg:-mt-[8.5rem]"
+          delay={0.05}
+        >
+          <BioCarton />
         </Reveal>
       </div>
     </section>

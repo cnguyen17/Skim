@@ -1,23 +1,26 @@
 // src/components/BookingEmbed.tsx
-// §9 booking — Cal.com inline embed (free, no backend). The username lives in
-// site.config (§0). Mounts lazily when scrolled near (§10). If the username is
-// still the TODO placeholder, it shows setup guidance instead of an empty embed.
+// §9 booking — Cal.com inline embed (free, no backend). Credentials live in
+// site.config or VITE_CALCOM_USER. Mounts lazily when scrolled near (§10).
 
 import { useEffect, useRef, useState } from "react";
 import Cal, { getCalApi } from "@calcom/embed-react";
-import { site } from "../data/site.config";
+import { buildCalLink, calcomReady } from "../lib/booking";
 
-const USER = site.booking.calcomUser;
-const CONFIGURED = !!USER && !USER.startsWith("TODO");
 const NS = "skim-booking";
 
-export function BookingEmbed() {
+type Props = {
+  /** Cal.com event slug — embeds cal.com/{user}/{slug}. Omit for all event types. */
+  eventSlug?: string;
+};
+
+export function BookingEmbed({ eventSlug }: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [show, setShow] = useState(false);
+  const calLink = buildCalLink(eventSlug);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || !CONFIGURED) return;
+    if (!el || !calcomReady) return;
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -43,12 +46,14 @@ export function BookingEmbed() {
     })();
   }, [show]);
 
-  if (!CONFIGURED) {
+  if (!calcomReady || !calLink) {
     return (
       <div className="rounded-xl border border-dashed border-line bg-ink-2 p-10 text-center">
         <p className="font-display text-2xl uppercase text-milk">Booking opens soon</p>
         <p className="mt-2 font-body text-sm text-mid">
-          Add a Cal.com username in site.config to embed live scheduling here.
+          Add your Cal.com username in{" "}
+          <code className="text-accent">site.config.ts</code> or{" "}
+          <code className="text-accent">.env.local</code> to embed live scheduling here.
         </p>
       </div>
     );
@@ -58,8 +63,9 @@ export function BookingEmbed() {
     <div ref={ref} className="overflow-hidden rounded-xl border border-line bg-ink-2">
       {show ? (
         <Cal
+          key={calLink}
           namespace={NS}
-          calLink={USER}
+          calLink={calLink}
           style={{ width: "100%", height: "640px", overflow: "scroll" }}
           config={{ layout: "month_view", theme: "dark" }}
         />

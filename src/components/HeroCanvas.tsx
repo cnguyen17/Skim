@@ -23,20 +23,25 @@ export default function HeroCanvas({
   progress: RefObject<number>;
   box: RefObject<HTMLElement | null>;
 }) {
+  // Two marble tones sourced from tokens (§3): swap cream↔white (or a future
+  // palette) by editing the token, not the shader. --milk is the light tone.
   const colors = useMemo(
     () => ({
-      surface: token("--hero-surface", "#F7F2E8"),
-      ink: token("--ink", "#0F0E0C"),
-      lineLo: token("--hero-line-lo", "rgba(15,14,12,0.22)"),
-      lineHi: token("--hero-line-hi", "rgba(247,242,232,0.16)"),
+      light: token("--milk", "#F7F2E8"),
+      dark: token("--ink", "#0F0E0C"),
       accent: token("--accent", "#58D7FF"),
     }),
     [],
   );
 
+  // Cheaper shader + lower DPR on mobile / weak GPUs (brief: fall back on mobile).
+  const lowPower =
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 768px), (pointer: coarse)").matches;
+
   return (
     <Canvas
-      dpr={[1, 2]}
+      dpr={[1, lowPower ? 1.5 : 2]}
       // Fixed orthographic-feel perspective; the plane covers the frustum and all
       // motion lives in the shader, so the camera never moves.
       camera={{ position: [0, 0, 5], fov: 45 }}
@@ -47,11 +52,10 @@ export default function HeroCanvas({
         <Background
           progress={progress}
           box={box}
-          surface={colors.surface}
-          ink={colors.ink}
-          lineLo={colors.lineLo}
-          lineHi={colors.lineHi}
+          colorLight={colors.light}
+          colorDark={colors.dark}
           accent={colors.accent}
+          lowPower={lowPower}
         />
       </Suspense>
     </Canvas>

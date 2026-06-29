@@ -4,12 +4,12 @@
 // → Booking. §11: the overlay traps focus, closes on Esc, restores focus to the
 // trigger, and locks scroll while open.
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { site } from "../data/site.config";
-import { RollText } from "./RollText";
 import { useLenis } from "./LenisProvider";
 import { getHeroTheme, subscribeHeroTheme } from "../lib/heroTheme";
+import { scrollToSection } from "../lib/scrollToSection";
 
 type MenuItem = { label: string; to: string };
 
@@ -17,8 +17,10 @@ type MenuItem = { label: string; to: string };
 const MENU: MenuItem[] = [
   { label: "Home", to: "/" },
   { label: "DJ Info", to: "/#bio" },
-  { label: "DJ Sets", to: "/sets" },
-  { label: "Equipment Rentals", to: "/equipment" },
+  { label: "DJ Sets", to: "/#work" },
+  { label: "Collaborations", to: "/#collaborations" },
+  { label: "Gallery", to: "/#gallery" },
+  { label: "Equipment Rental", to: "/equipment" },
   { label: "Booking", to: "/booking" },
 ];
 
@@ -77,26 +79,29 @@ export function Nav() {
     };
   }, [open, lenis]);
 
-  // Navigate, handling "/#bio" style in-page anchors via Lenis when possible.
+  // Navigate — in-page hashes scroll to section tops; routes change pathname.
   const go = useCallback(
     (to: string) => {
       setOpen(false);
-      const [path, hash] = to.split("#");
-      const targetPath = path || "/";
-      const scrollToHash = () => {
-        if (!hash) return;
-        const el = document.getElementById(hash);
-        if (!el) return;
-        if (lenis) lenis.scrollTo(el, { offset: -64 });
-        else el.scrollIntoView({ behavior: "auto", block: "start" });
-      };
+      const hashIndex = to.indexOf("#");
+      const targetPath = hashIndex >= 0 ? to.slice(0, hashIndex) || "/" : to;
+      const hash = hashIndex >= 0 ? to.slice(hashIndex + 1) : "";
+
+      if (hash) {
+        if (location.pathname !== targetPath) {
+          navigate({ pathname: targetPath, hash });
+        } else {
+          navigate({ pathname: targetPath, hash }, { replace: true });
+          // Defer until menu closes and Lenis restarts (menu calls lenis.stop()).
+          setTimeout(() => scrollToSection(hash, lenis), 50);
+        }
+        return;
+      }
 
       if (location.pathname === targetPath) {
-        if (hash) scrollToHash();
-        else lenis ? lenis.scrollTo(0) : window.scrollTo(0, 0);
+        lenis ? lenis.scrollTo(0) : window.scrollTo(0, 0);
       } else {
         navigate(targetPath);
-        if (hash) setTimeout(scrollToHash, 300);
       }
     },
     [lenis, location.pathname, navigate],
@@ -142,65 +147,100 @@ export function Nav() {
                 <span className="block h-px w-5 bg-current" />
                 <span className="block h-px w-5 bg-current" />
               </span>
-              <RollText text="Menu" />
+              Menu
             </button>
           </div>
 
-          {/* Right: get in contact — filled cyan on the light hero (high contrast,
-              like Lando's top-right CTA), readable secondary pill on dark. */}
-          <Link
-            to="/booking"
-            className={
-              light
-                ? "rounded-full bg-accent px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] text-ink transition-transform hover:-translate-y-0.5"
-                : "rounded-full border border-milk/40 bg-ink/40 px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] text-milk backdrop-blur transition-colors hover:border-accent hover:text-accent"
-            }
-          >
-            <RollText text="Get in contact" />
-          </Link>
+          {/* Right: booking + equipment CTAs */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to={site.ctas.equipment.to}
+              className={
+                light
+                  ? "rounded-full border border-ink/25 px-3 py-2 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink transition-colors hover:border-ink/50 sm:px-4 sm:text-xs sm:tracking-[0.2em]"
+                  : "rounded-full border border-milk/40 bg-ink/40 px-3 py-2 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-milk backdrop-blur transition-colors hover:border-accent hover:text-accent sm:px-4 sm:text-xs sm:tracking-[0.2em]"
+              }
+            >
+              {site.ctas.equipment.label}
+            </Link>
+            <Link
+              to={site.ctas.booking.to}
+              className={
+                light
+                  ? "rounded-full bg-accent px-3 py-2 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink transition-transform hover:-translate-y-0.5 sm:px-4 sm:text-xs sm:tracking-[0.2em]"
+                  : "rounded-full bg-accent px-3 py-2 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink transition-transform hover:-translate-y-0.5 sm:px-4 sm:text-xs sm:tracking-[0.2em]"
+              }
+            >
+              {site.ctas.booking.label}
+            </Link>
+          </div>
         </div>
       </header>
 
-      {/* Overlay menu */}
+      {/* Overlay backdrop */}
+      <button
+        type="button"
+        aria-label="Close menu"
+        tabIndex={open ? 0 : -1}
+        onClick={() => setOpen(false)}
+        className={`nav-backdrop fixed inset-0 z-[60] bg-ink/60 backdrop-blur-sm transition-opacity duration-500 ${
+          open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      />
+
+      {/* Sliding menu panel — enters from left */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Site menu"
-        hidden={!open}
-        className={`fixed inset-0 z-[60] flex flex-col bg-ink/95 backdrop-blur-xl transition-opacity duration-300 ${
-          open ? "opacity-100" : "pointer-events-none opacity-0"
+        aria-hidden={!open}
+        className={`nav-panel fixed inset-y-0 left-0 z-[61] flex w-full flex-col border-r border-line bg-ink/97 backdrop-blur-xl transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:max-w-xl ${
+          open ? "is-open translate-x-0" : "pointer-events-none -translate-x-full"
         }`}
+        inert={!open ? true : undefined}
       >
-        <div className="flex items-center justify-between px-5 py-4 sm:px-8">
+        <div className="nav-panel__bar flex items-center justify-between px-5 py-4 sm:px-8">
           <span className="font-mono text-xs uppercase tracking-[0.3em] text-mid">
             {site.tagline}
           </span>
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="font-mono text-xs uppercase tracking-[0.25em] text-milk hover:text-accent"
+            className="nav-close group flex items-center gap-3 font-mono text-xs uppercase tracking-[0.25em] text-milk"
           >
-            <RollText text="Close" /> ✕
+            <span className="transition-[transform,color] duration-300 group-hover:translate-x-0.5 group-hover:text-accent">
+              Close
+            </span>
+            <span
+              className="nav-close__icon relative flex h-9 w-9 items-center justify-center rounded-full border border-line transition-[border-color,background-color,transform] duration-300 group-hover:border-accent group-hover:bg-accent/10 group-hover:rotate-90"
+              aria-hidden
+            >
+              <span className="absolute block h-px w-3.5 rotate-45 bg-current" />
+              <span className="absolute block h-px w-3.5 -rotate-45 bg-current" />
+            </span>
           </button>
         </div>
 
-        <nav className="flex flex-1 flex-col justify-center gap-2 px-5 sm:px-8">
+        <nav className="flex flex-1 flex-col justify-center gap-1 px-5 pb-16 sm:gap-2 sm:px-8 sm:pb-20">
           {MENU.map((item, i) => (
             <button
               key={item.to}
               type="button"
               onClick={() => go(item.to)}
-              className="group flex items-baseline gap-4 py-1 text-left"
+              style={{ "--i": i } as CSSProperties}
+              className="nav-panel__item group flex items-baseline gap-4 py-2 text-left sm:py-2.5"
             >
-              <span className="font-mono text-xs text-mid tabular-nums">
+              <span className="w-8 shrink-0 font-mono text-xs tabular-nums text-mid transition-colors duration-300 group-hover:text-accent group-focus-visible:text-accent">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <RollText
-                text={item.label}
-                as="span"
-                className="font-display text-4xl uppercase leading-none text-milk transition-colors group-hover:text-accent sm:text-6xl"
-              />
+              <span className="relative inline-block pb-1 font-display text-[clamp(1.875rem,6.5vw,3.5rem)] uppercase leading-[0.92] tracking-[0.02em] text-milk">
+                {item.label}
+                <span
+                  className="absolute bottom-0 left-0 h-[3px] w-0 bg-accent transition-[width] duration-300 ease-out group-hover:w-full group-focus-visible:w-full"
+                  aria-hidden
+                />
+              </span>
             </button>
           ))}
         </nav>

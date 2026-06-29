@@ -4,10 +4,10 @@
 // rolls in, staggered per letter. The per-letter delay is set in JS (--i) so it
 // works cross-browser (no Chrome-only sibling-index()).
 //
-// §11: under reduced motion the global CSS zeroes the transitions, so the text
-// simply shows statically — still fully legible.
+// Pseudo-element color cannot use currentColor (the .rl spans are transparent),
+// so we snapshot the computed .roll color into --roll-fg after paint.
 
-import { createElement, type ElementType } from "react";
+import { createElement, useLayoutEffect, useRef, type ElementType } from "react";
 
 function graphemes(text: string): string[] {
   if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
@@ -15,6 +15,17 @@ function graphemes(text: string): string[] {
     return Array.from(seg.segment(text), (s) => s.segment);
   }
   return Array.from(text);
+}
+
+function syncRollColor(el: HTMLElement) {
+  const cs = getComputedStyle(el);
+  const { color, fontSize } = cs;
+  if (color && color !== "rgba(0, 0, 0, 0)" && color !== "transparent") {
+    el.style.setProperty("--roll-fg", color);
+  }
+  if (fontSize) {
+    el.style.setProperty("--roll-fs", fontSize);
+  }
 }
 
 export function RollText({
@@ -26,23 +37,32 @@ export function RollText({
   as?: ElementType;
   className?: string;
 }) {
+  const rootRef = useRef<HTMLElement>(null);
   const chars = graphemes(text);
+
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    syncRollColor(el);
+    const ro = new ResizeObserver(() => syncRollColor(el));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [className, text]);
 
   return createElement(
     as,
-    { className: `roll ${className}`.trim(), "aria-label": text },
+    { ref: rootRef, className: `roll ${className}`.trim(), "aria-label": text },
     chars.map((c, i) =>
-      createElement(
-        "span",
-        {
-          key: i,
-          className: "rl",
-          style: { "--i": i } as React.CSSProperties,
-          "data-char": c === " " ? " " : c,
-          "aria-hidden": true,
-        },
-        c === " " ? " " : c,
-      ),
+      createElement("span", {
+        key: i,
+        className: "rl",
+        style: {
+          "--i": i,
+          width: c === " " ? "0.35em" : "1ch",
+        } as React.CSSProperties,
+        "data-char": c === " " ? " " : c,
+        "aria-hidden": true,
+      }),
     ),
   );
 }

@@ -64,17 +64,28 @@ html.lenis body {
   overflow: hidden;
   vertical-align: bottom;
   white-space: nowrap;
+  color: inherit;
+  --roll-fg: var(--milk);
+  --roll-fs: 1em;
 }
 .roll .rl {
   position: relative;
-  color: transparent;
+  display: inline-block;
+  overflow: hidden;
+  height: 1em;
+  line-height: 1;
+  vertical-align: top;
+  user-select: none;
 }
 .roll .rl::before,
 .roll .rl::after {
   content: attr(data-char);
   position: absolute;
   left: 0;
-  color: currentColor;
+  top: 0;
+  font-size: var(--roll-fs);
+  line-height: 1;
+  color: var(--roll-fg);
   transition: transform 0.3s cubic-bezier(0.6, 0, 0.2, 1);
   transition-delay: calc(var(--i, 0) * 18ms);
   white-space: pre;
@@ -98,6 +109,58 @@ a:focus-visible .roll .rl::after {
   transform: translateY(0);
 }
 
+#bio,
+#work,
+#contact {
+  scroll-margin-top: calc(var(--nav-offset, 4.5rem) + 4px);
+}
+
+/* Bio bear stage — no clip frame; canvas fills the 780×800 sticker box. */
+.bio-bear {
+  overflow: visible;
+}
+.bio-bear canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ---- Nav overlay (§6) --------------------------------------------------- */
+.nav-panel__bar,
+.nav-panel__item {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+.nav-panel.is-open .nav-panel__bar {
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    opacity 0.45s ease,
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: 0.12s;
+}
+.nav-panel.is-open .nav-panel__item {
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    opacity 0.45s ease,
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(0.18s + var(--i, 0) * 65ms);
+}
+.nav-close:focus-visible .nav-close__icon,
+.nav-close:hover .nav-close__icon {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-panel__bar,
+  .nav-panel__item {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 /* ---- Reveal (§8) -------------------------------------------------------- */
 /* JS adds .is-in when the element scrolls into view (see Reveal.tsx). */
 .reveal {
@@ -111,6 +174,168 @@ a:focus-visible .roll .rl::after {
 .reveal.is-in {
   opacity: 1;
   transform: none;
+}
+
+/* ---- The Work fridge — 3D (§6) ------------------------------------------ */
+/* The Three.js canvas + the HTML overlay player live here. Only mounts on
+ * desktop with WebGL + motion allowed (WorkFridge falls back to the tabbed grid
+ * otherwise), so these styles never reach mobile / reduced-motion users. */
+
+.fridge3d {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+.fridge3d__stage {
+  position: relative;
+  width: 100%;
+  height: clamp(560px, 86vh, 900px);
+  border-radius: 18px;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(88, 215, 255, 0.06), transparent 55%),
+    linear-gradient(180deg, var(--ink-2), var(--ink));
+  border: 1px solid var(--line);
+}
+.fridge3d__mount {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.fridge3d__loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mid);
+}
+
+/* Category leader-line labels (draw out when the fridge opens). */
+.fridge3d__label {
+  position: absolute;
+  z-index: 2;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.fridge3d__label-line {
+  width: 42px;
+  height: 1px;
+  background: var(--accent);
+  transform-origin: left center;
+  animation: fridge-draw 0.5s ease both;
+}
+.fridge3d__label-text {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+  opacity: 0;
+  animation: fridge-fade 0.4s ease 0.35s both;
+}
+@keyframes fridge-draw {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes fridge-fade {
+  from { opacity: 0; transform: translateX(-4px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* The video sits exactly on the zoomed carton's face window (rect from 3D). */
+.fridge3d__screen {
+  position: absolute;
+  z-index: 2;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6), 0 20px 50px -16px rgba(0, 0, 0, 0.7);
+  animation: fridge-screen-in 0.3s ease both;
+}
+.fridge3d__screen iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+/* Spotify is a short horizontal player — fit it to its own height (no black box)
+ * and let the carton's cover-art face show around it. */
+.fridge3d__screen--audio {
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fridge3d__screen--audio iframe {
+  height: 152px;
+  border-radius: 12px;
+}
+@keyframes fridge-screen-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+/* Close button — top-right of the stage while a carton is open. */
+.fridge3d__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 4;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--accent);
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.fridge3d__close:hover { background: color-mix(in srgb, var(--accent) 80%, #fff); }
+
+/* Control bar under the stage. */
+.fridge3d__ui {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.fridge3d__hint {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mid);
+}
+.fridge3d__toggle {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--accent);
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.12s ease;
+}
+.fridge3d__toggle:hover { background: color-mix(in srgb, var(--accent) 82%, #fff); }
+.fridge3d__toggle:active { transform: scale(0.97); }
+
+@media (max-width: 640px) {
+  .fridge3d__hint { display: none; }
 }
 
 /* ---- Reduced motion (§8 / §11) ------------------------------------------ */

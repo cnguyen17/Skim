@@ -53,7 +53,10 @@ export function Hero() {
 
   const [nearView, setNearView] = useState(false);
   const use3D = !reducedMotion && webglAvailable();
-  const [message0, message1] = site.hero.message;
+  // Final hero frame copy (config). Headline string lives in site.config; the sub
+  // is the handle (shown as @MYNAMEIZSKIM via CSS uppercase).
+  const headline = site.hero.outro.headline;
+  const sub = `@${site.handle}`;
 
   // Mount/unmount the canvas based on proximity to the viewport (pause offscreen).
   useEffect(() => {
@@ -95,8 +98,12 @@ export function Hero() {
     const smallH = () => smallW() * (9 / 16); // 16:9 letterbox
 
     const FRAME_END = 0.45;
+    const FRAME_EARLY = 0.2; // first fifth of scroll — photo "pushes away" fast
     const LOGO_START = 0.50;
     const EXIT_START = 0.92;
+
+    const midW = () => openW() * 0.76;
+    const midH = () => openH() * 0.76;
 
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
@@ -110,46 +117,58 @@ export function Hero() {
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             progress.current = self.progress;
-            setHeroTheme(self.progress < 0.22 ? "light" : "dark");
+            setHeroTheme(self.progress < 0.14 ? "light" : "dark");
           },
         },
       });
 
       // Foreground (handle + scroll cue) fades out first.
-      tl.to(foreRef.current, { autoAlpha: 0, duration: 0.14 }, 0);
+      tl.to(foreRef.current, { autoAlpha: 0, duration: 0.1 }, 0);
 
-      // Full viewport → centered letterbox. The shader reads this rect live, so
-      // the contour bg darkens around the edges as the "page" zooms out.
+      // Full viewport → letterbox. Phase 1 shrinks fast (border + dark matte
+      // visible immediately); phase 2 eases to final size.
       tl.fromTo(
         windowRef.current,
         { width: openW, height: openH },
-        { width: smallW, height: smallH, duration: FRAME_END },
+        { width: midW, height: midH, duration: FRAME_EARLY, ease: "power2.out" },
         0,
       );
+      tl.to(
+        windowRef.current,
+        { width: smallW, height: smallH, duration: FRAME_END - FRAME_EARLY, ease: "power1.inOut" },
+        FRAME_EARLY,
+      );
+
+      // Cyan frame — visible from the first scroll tick.
       tl.fromTo(
         windowRef.current,
         { borderColor: "rgba(88,215,255,0)", borderRadius: 0 },
-        { borderColor: frameColor, borderRadius: 12, duration: 0.16 },
-        0.12,
+        { borderColor: frameColor, borderRadius: 12, duration: 0.07, ease: "power2.out" },
+        0,
       );
 
-      // Subtle scale as letterbox forms — object-contain keeps head + shoulders uncropped.
+      // Head lifts slightly as the window recedes — photo pushed away feel.
       const { scaleOpen, scaleClosed } = site.hero.faceFraming;
       tl.fromTo(
         subjectRef.current,
         { scale: scaleOpen, yPercent: 0 },
-        { scale: scaleClosed, yPercent: 0, duration: FRAME_END },
+        { scale: scaleClosed, yPercent: -6, duration: FRAME_EARLY, ease: "power2.out" },
         0,
       );
+      tl.to(
+        subjectRef.current,
+        { yPercent: -3, scale: scaleClosed, duration: FRAME_END - FRAME_EARLY, ease: "power1.inOut" },
+        FRAME_EARLY,
+      );
 
-      // Studio shade on transparent PNG edges — only once off full-bleed.
-      tl.fromTo(shadeRef.current, { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0.14);
+      // Studio shade on transparent PNG edges — follows the early shrink.
+      tl.fromTo(shadeRef.current, { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "power2.out" }, 0.04);
 
-      // Side display text — fade in early, exit before logo lands.
-      tl.fromTo(textTopRef.current, { yPercent: 90, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.1 }, 0.06);
+      // Side display text — fade in as the window recedes, exit before logo lands.
+      tl.fromTo(textTopRef.current, { yPercent: 90, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.08, ease: "power2.out" }, 0.04);
       tl.to(textTopRef.current, { yPercent: -170, autoAlpha: 0, duration: 0.34 }, 0.22);
 
-      tl.fromTo(textBotRef.current, { yPercent: -90, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.1 }, 0.06);
+      tl.fromTo(textBotRef.current, { yPercent: -90, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.08, ease: "power2.out" }, 0.04);
       tl.to(textBotRef.current, { yPercent: -210, autoAlpha: 0, duration: 0.34 }, 0.22);
 
       // Logo reveal: letters → full → halo → sparkles. Child tl duration is
@@ -232,17 +251,17 @@ export function Hero() {
 
       {/* Side display text — skim's own words (config). Stacked top/bottom and
           centered so it always fits; GSAP rises + scrolls each row up and out. */}
-      {message0 && (
+      {headline && (
         <div className="pointer-events-none absolute inset-x-0 top-[10%] z-10 flex justify-center px-5 text-center">
-          <div ref={textTopRef} className={`${sideTextBase} font-display text-[13vw] sm:text-[9vw]`}>
-            {message0}
+          <div ref={textTopRef} className={`${sideTextBase} font-display text-[7vw] sm:text-[3.6vw]`}>
+            {headline}
           </div>
         </div>
       )}
-      {message1 && (
+      {sub && (
         <div className="pointer-events-none absolute inset-x-0 bottom-[10%] z-10 flex justify-center px-5 text-center">
           <div ref={textBotRef} className={`${sideTextBase} font-mono tracking-[0.06em] text-[6vw] sm:text-[3vw]`}>
-            {message1}
+            {sub}
           </div>
         </div>
       )}
