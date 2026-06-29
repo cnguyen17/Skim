@@ -85,7 +85,7 @@ export const site = {
   // Production credits
   producing: [
     { type: "spotify", id: "6NVrIy22BHf8CybljCdohU", title: "Crush Lounge Rework" },
-    { type: "youtube", id: "1ots2rodrq0",            title: "Reset by Cadabloo feat. DJ Skim" },
+    { type: "youtube", id: "1ots2rodrq0",            title: "Reset by Cadabloo feat. Skim" },
   ],
 
   // Collaborations — sets & skits skim produced for others. Its own standalone
