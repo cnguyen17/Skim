@@ -36,7 +36,6 @@ Two single sources of truth (never hardcode in components):
 - `sets[].title` / `producing[].title` — replace the `TODO` titles.
 - `gallery` — add set photos to `public/images/sets/` (WebP/AVIF) and list
   them here; the gallery filters by the `set` field.
-- `equipment` — list gear to rent (`{ name, img, note }`).
 - Brand art: drop `public/bear.svg` (3D hero centerpiece — currently the
   wordmark stands in) and `public/signature.svg` (the scroll signature uses a
   placeholder vector until then). The hero centerpiece is a swappable layer, so

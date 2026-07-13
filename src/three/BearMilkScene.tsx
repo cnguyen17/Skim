@@ -40,9 +40,10 @@ import {
   type Material,
 } from "three";
 import { useLabelTexture } from "./useLabelTexture";
+import { BEAR_URL } from "./bearAssets";
 
 // Compressed (148k-tri, meshopt, 1K) replacement for the raw Tripo export.
-const BEAR_URL = "/models/bear-carton.glb";
+// Prefer preloadBearAssets() from Home so this is warm before Bio scrolls in.
 
 // ─── Tunables ────────────────────────────────────────────────────────────────
 // Framing of the whole piece inside the (tall) Bio column.
@@ -314,7 +315,7 @@ export function BearMilkScene({
         position={[3, 5, 4]}
         intensity={1.6}
         castShadow
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[512, 512]}
         shadow-bias={-0.0002}
       />
       <directionalLight position={[-3, 2.5, 4]} intensity={0.7} color="#fff4e0" />
@@ -335,7 +336,7 @@ export function BearMilkScene({
         scale={8}
         blur={2.4}
         far={4}
-        resolution={512}
+        resolution={256}
       />
     </>
   );

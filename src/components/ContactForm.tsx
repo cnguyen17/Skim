@@ -97,7 +97,7 @@ export function ContactForm({ subject = "New message from skim.site" }: { subjec
           required
           rows={5}
           className={inputClass}
-          placeholder="Booking, equipment, a collab — tell skim what you're after."
+          placeholder="Booking, a collab, or just hello — tell skim what you're after."
         />
       </label>
 

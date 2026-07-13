@@ -1,6 +1,5 @@
-// src/routes/Booking.tsx — §2/§9 contact paths: book a DJ set, a general
-// meeting, or an equipment request. Cal.com handles scheduling; Web3Forms
-// handles the message. No backend.
+// src/routes/Booking.tsx — §2/§9 contact paths: book a DJ set or a general
+// meeting. Cal.com handles scheduling; Web3Forms handles the message. No backend.
 import { useState } from "react";
 import { BookingEmbed } from "../components/BookingEmbed";
 import { ContactForm } from "../components/ContactForm";
@@ -31,8 +30,8 @@ export default function Booking() {
           </h1>
         </Reveal>
 
-        {/* Three services — pick which Cal.com event type to embed */}
-        <div className="mt-12 grid gap-4 sm:grid-cols-3" role="tablist" aria-label="Booking type">
+        {/* Services — pick which Cal.com event type to embed */}
+        <div className="mt-12 grid gap-4 sm:grid-cols-2" role="tablist" aria-label="Booking type">
           {EVENTS.map((event, i) => {
             const selected = event.id === activeId;
             return (

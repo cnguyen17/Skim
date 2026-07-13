@@ -109,8 +109,7 @@ public/
 - **`/` (Home)** — `Hero` → `Bio` (`#bio`) → Work section (`#work`, `WorkTabs`)
   → `ContactCTA` (`#contact`). Nav "DJ Info" links to `/#bio`.
 - **`/sets`** — `WorkTabs` + `Gallery`.
-- **`/equipment`** — gear grid (empty state for now) + "Request this" → Booking.
-- **`/booking`** — three services, `BookingEmbed`, `ContactForm`.
+- **`/booking`** — DJ set / meeting services, `BookingEmbed`, `ContactForm`.
 
 Routes are `React.lazy` code-split. Shared chrome (Nav/Footer/Loader/skip-link)
 lives in `Layout.tsx`.
@@ -127,7 +126,6 @@ These are intentionally stubbed and gated so nothing breaks while empty:
 | Web3Forms key | `site.config.booking.web3formsKey` (`TODO-…`) | Contact form shows "not configured" + disabled submit |
 | Set / track titles | `site.config.sets[].title`, `producing[].title` | Literal "TODO …" strings render |
 | Gallery photos | `site.config.gallery` (empty) + `public/images/sets/` | Gallery shows "Photos coming soon" |
-| Equipment list | `site.config.equipment` (empty) | Equipment shows "Gear list coming soon" |
 | Bear mascot art | `public/bear.svg` (missing) | Hero centerpiece uses the **wordmark** as a stand-in |
 | Signature art | `public/signature.svg` (missing) | `Signature.tsx` draws a **placeholder vector path** |
 
@@ -218,7 +216,7 @@ Phase 1  Scaffold
 Phase 2+3 Shell, motion base, loader
 Phase 4  3D hero
 Phase 5  Content sections
-Phase 6+7 Gallery, equipment, booking, contact
+Phase 6+7 Gallery, booking, contact
 Phase 8  Performance + a11y pass
 Phase 9  Deploy readiness + README
 ```

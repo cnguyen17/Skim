@@ -190,7 +190,8 @@ a:focus-visible .roll .rl::after {
 .fridge3d__stage {
   position: relative;
   width: 100%;
-  height: clamp(560px, 86vh, 900px);
+  /* Cap by viewport height so 13–16" laptops always fit the full fridge. */
+  height: clamp(420px, 68vh, 720px);
   border-radius: 18px;
   overflow: hidden;
   background:
@@ -203,6 +204,12 @@ a:focus-visible .roll .rl::after {
   inset: 0;
   width: 100%;
   height: 100%;
+}
+/* Canvas must fill the mount in CSS px — never the DPR-scaled bitmap size. */
+.fridge3d__mount canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 .fridge3d__loading {
   position: absolute;
@@ -336,6 +343,22 @@ a:focus-visible .roll .rl::after {
 
 @media (max-width: 640px) {
   .fridge3d__hint { display: none; }
+}
+
+/* ---- Gallery page slide (§6) -------------------------------------------- */
+@keyframes gallery-in-right {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes gallery-in-left {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: none; }
+}
+.animate-gallery-in-right {
+  animation: gallery-in-right 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-gallery-in-left {
+  animation: gallery-in-left 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* ---- Reduced motion (§8 / §11) ------------------------------------------ */

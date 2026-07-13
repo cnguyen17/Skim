@@ -11,7 +11,6 @@ export const site = {
   // Primary CTAs — labels + routes (Nav, ContactCTA, etc.)
   ctas: {
     booking: { label: "Schedule booking", to: "/booking" },
-    equipment: { label: "Equipment rental", to: "/equipment" },
   },
 
   // Brand assets
@@ -47,16 +46,20 @@ export const site = {
     // different sunglasses. Sorted by filename; the glasses cycle through all of
     // these on scroll and settle on `settleFrame`.
     faceFrames: [
-      "/images/sets/Skim/face-01.png",
-      "/images/sets/Skim/face-02.png",
-      "/images/sets/Skim/face-03.png",
-      "/images/sets/Skim/face-04.png",
-      "/images/sets/Skim/face-05.png",
-      "/images/sets/Skim/face-07.png",
-      "/images/sets/Skim/face-08.png",
-      "/images/sets/Skim/face-09.png",
+      "/images/sets/Skim/skim-headshot-3.png",
+      "/images/sets/Skim/skim-headshot-4.png",
+      "/images/sets/Skim/skim-headshot-5.png",
+      "/images/sets/Skim/skim-headshot-6.png",
+      "/images/sets/Skim/skim-headshot-7.png",
+      "/images/sets/Skim/skim-headshot-8.png",
+      "/images/sets/Skim/skim-headshot-9.png",
+      "/images/sets/Skim/skim-headshot-10.png",
+      "/images/sets/Skim/skim-headshot-11.png",
+      "/images/sets/Skim/skim-headshot-12.png",
+      "/images/sets/Skim/skim-headshot-13.png",
+      "/images/sets/Skim/skim-headshot-14.png",
     ] as string[],
-    settleFrame: 7, // index the cycle eases to / lands on (default: last frame)
+    settleFrame: 11, // index the cycle eases to / lands on (default: last frame)
     // Framing for 683×683 aligned face PNGs. object-contain = no crop; full head
     // + shoulders always visible. Scale nudges slightly on scroll as letterbox forms.
     faceFraming: {
@@ -98,18 +101,65 @@ export const site = {
     role?: string;
   }[],
 
-  // Set photos for the filterable gallery
-  // gallery: [{ src: "/images/sets/xxx.webp", set: "the-pool", alt: "..." }, ...]
-  gallery: [] as { src: string; set: string; alt: string }[],
-
-  // Equipment available to rent (owner fills)
-  equipment: [
-    // { name: "Pioneer DJ CDJ-3000 (pair)", img: "/images/gear/cdj.webp", note: "Setup available" },
-  ],
+  // Set photos — paginated grid gallery + lightbox. Drop more into
+  // public/images/gallery/ and list them here.
+  // Order = page order. Best set (former page 3) leads so it opens first.
+  gallery: [
+    { src: "/images/gallery/collage_11.webp", set: "sets", alt: "skim photo collage" },
+    { src: "/images/gallery/img_2282.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_2912.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_2916.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_3480.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_3482.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_3483.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_3495.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_3496.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_4019.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_4020.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_4021.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/01jdy0p0jqage66jdg39883g75-low-res-branded.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/01jdy0z1amzcg4acc6n96zhez8-low-res-branded.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/01jx4q15wqsgpp4whpzpeqkp1x-low-res-branded.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/01jx4q68cq2csxvy92j11tg9bz-low-res-branded.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/105_9996.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/106_0003.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/8e9bad19-75c0-4f4c-8124-ac604fd30849.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/_glv7915-1.webp", set: "sets", alt: "skim at the decks" },
+    { src: "/images/gallery/_glv7977.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/_glv8196.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/_glv8216.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/b1368eb2-6f61-4f1d-8762-bd72ece7df51.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/capture-one-catalog2833.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/capture-one-catalog2863.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/capture-one-catalog2906-1.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/capture-one-catalog2925.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/capture-one-catalog2982.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/capture-one-catalog3024.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/capture-one-catalog3062.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/capture-one-catalog3075.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/capture-one-catalog3104.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/capture-one-catalog3180.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/capture-one-catalog3215.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/capture-one-catalog3261.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_4023.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_4850.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_9093.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_9927.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_9929.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_9931.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_9934.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_9936.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_9938.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_9939.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_9940.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_9941.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_9942.webp", set: "sets", alt: "skim live set" },
+    { src: "/images/gallery/img_9943.webp", set: "sets", alt: "skim live set" },
+  ] as { src: string; set: string; alt: string }[],
 
   booking: {
     // Override via VITE_CALCOM_USER / VITE_WEB3FORMS_KEY in .env.local (see .env.example).
-    calcomUser: "TODO-calcom-username", // e.g. "skim" → cal.com/skim
+    calcomUser: "skimproductionent", // cal.com/skimproductionent
     web3formsKey: "TODO-web3forms-access-key", // free key at web3forms.com
     // One Cal.com event type per service. Slug = URL segment after the username
     // (cal.com/{username}/{slug}). Leave TODO until event types exist in Cal.com.
@@ -125,12 +175,6 @@ export const site = {
         title: "General meeting",
         note: "Collabs, production, or just a chat.",
         slug: "TODO-meeting-slug", // e.g. "30min" or "general-meeting"
-      },
-      {
-        id: "equipment",
-        title: "Equipment + setup",
-        note: "Rent his gear; he can set it up.",
-        slug: "TODO-equipment-slug", // e.g. "equipment-rental"
       },
     ],
   },

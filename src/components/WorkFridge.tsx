@@ -139,8 +139,8 @@ export function WorkFridge() {
           </Suspense>
         )}
 
-        {/* Category leader-lines (drawn out when open). */}
-        {open && layout.producing && (
+        {/* Category leader-lines — hide while a carton is zoomed so they don't sit on top of the player. */}
+        {open && !activeKey && layout.producing && (
           <div
             className="fridge3d__label"
             style={{ left: `${layout.producing.x * 100}%`, top: `${layout.producing.y * 100}%` }}
@@ -149,7 +149,7 @@ export function WorkFridge() {
             <span className="fridge3d__label-text">Producing</span>
           </div>
         )}
-        {open && layout.sets && (
+        {open && !activeKey && layout.sets && (
           <div
             className="fridge3d__label"
             style={{ left: `${layout.sets.x * 100}%`, top: `${layout.sets.y * 100}%` }}

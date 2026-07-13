@@ -10,7 +10,6 @@ import { Layout } from "./components/Layout";
 
 const Home = lazy(() => import("./routes/Home"));
 const Sets = lazy(() => import("./routes/Sets"));
-const Equipment = lazy(() => import("./routes/Equipment"));
 const Booking = lazy(() => import("./routes/Booking"));
 // TEMP (Part A verification) — remove with /_label route once label is confirmed.
 const LabelPreview = lazy(() => import("./routes/LabelPreview"));
@@ -27,7 +26,6 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
             <Route path="/sets" element={<Sets />} />
-            <Route path="/equipment" element={<Equipment />} />
             <Route path="/booking" element={<Booking />} />
           </Route>
           {/* TEMP (Part A verification) — standalone, no Layout. Remove later. */}

@@ -20,7 +20,6 @@ const MENU: MenuItem[] = [
   { label: "DJ Sets", to: "/#work" },
   { label: "Collaborations", to: "/#collaborations" },
   { label: "Gallery", to: "/#gallery" },
-  { label: "Equipment Rental", to: "/equipment" },
   { label: "Booking", to: "/booking" },
 ];
 
@@ -151,18 +150,8 @@ export function Nav() {
             </button>
           </div>
 
-          {/* Right: booking + equipment CTAs */}
+          {/* Right: booking CTA */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              to={site.ctas.equipment.to}
-              className={
-                light
-                  ? "rounded-full border border-ink/25 px-3 py-2 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink transition-colors hover:border-ink/50 sm:px-4 sm:text-xs sm:tracking-[0.2em]"
-                  : "rounded-full border border-milk/40 bg-ink/40 px-3 py-2 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-milk backdrop-blur transition-colors hover:border-accent hover:text-accent sm:px-4 sm:text-xs sm:tracking-[0.2em]"
-              }
-            >
-              {site.ctas.equipment.label}
-            </Link>
             <Link
               to={site.ctas.booking.to}
               className={

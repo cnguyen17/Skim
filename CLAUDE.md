@@ -35,11 +35,10 @@
 
 ## 2. Services to surface
 
-Three contact paths, all free, all no-backend (see §9):
+Two contact paths, all free, all no-backend (see §9):
 
 1. **Book a DJ set** — Cal.com event type.
 2. **General meeting / get in contact** — Cal.com event type (or the contact form).
-3. **Equipment rental + setup** — a static list of his gear with a "request this" button that opens the contact form / a Cal.com event type. He owns gear he wants to rent out and can set up.
 
 ---
 
@@ -121,7 +120,7 @@ Apply `.roll` to nav links and key headings.
 - **Lenis** (`lenis` / `@studio-freight/lenis`) — smooth scroll.
 - **Tailwind CSS** — styling (tokens from §3 wired in as CSS vars; reference via `var()` or Tailwind theme).
 - **lite-youtube-embed** — fast YouTube (loads a thumbnail; the player only mounts on click).
-- **react-router-dom** — client routing for the menu tabs (Home / DJ Sets / Equipment / etc.).
+- **react-router-dom** — client routing for the menu tabs (Home / DJ Sets / Booking / etc.).
 - Lightbox: **yet-another-react-lightbox** (or a small custom one) for the photo gallery.
 
 No Next.js (we chose Vite for the lightest static build + Cloudflare Pages). No state libraries needed.
@@ -154,7 +153,6 @@ src/
   routes/
     Home.tsx               # hero → bio → sets/producing/collabs → contact
     Sets.tsx               # DJ sets + producing + collaborations (tabbed)
-    Equipment.tsx          # rental list + request
     Booking.tsx            # Cal.com + contact
 public/
   skim-logo.png            # PROVIDED — SKIM wordmark (nav + loader)
@@ -168,7 +166,7 @@ public/
 ## 6. Information architecture
 
 **Top-left:** the **SKIM wordmark logo** (`skim-logo.png`, links to Home) + a **menu button** that opens an overlay menu with `.roll` links:
-`Home · DJ Info · DJ Sets · Equipment Rentals · Booking`
+`Home · DJ Info · DJ Sets · Booking`
 
 **Top-right:** **"Get in contact"** → routes to Booking (Cal.com).
 
@@ -205,7 +203,7 @@ public/
 - **Hero:** idle float on the mascot; mouse parallax on the background and mascot; on scroll, camera dolly-out + signature `stroke-dashoffset` draw.
 - **Section reveals:** elements rise + fade in on enter (GSAP from `y:24, opacity:0`), staggered. Use one shared `Reveal` component.
 - **Nav + headings:** the `.roll` per-letter effect (§3) on hover.
-- **Cards (videos/gear):** subtle 3D tilt toward the cursor on hover (rotateX/rotateY with perspective), spring back on leave.
+- **Cards (videos):** subtle 3D tilt toward the cursor on hover (rotateX/rotateY with perspective), spring back on leave.
 - **Restraint:** one signature 3D moment (the hero) + ambient background. Don't animate everything — over-animation reads cheap and tanks performance.
 - **Reduced motion:** if `prefers-reduced-motion: reduce`, disable Lenis, freeze the 3D to a static frame (or swap a static hero image), and replace reveals with instant opacity. The site must be fully usable and calm in this mode.
 
@@ -216,7 +214,7 @@ public/
 - **YouTube** → `lite-youtube-embed`. Never mount more than one real iframe at a time on load. Thumbnails first, player on click.
 - **Spotify** → official iframe embed, lazy (only when scrolled near).
 - **SoundCloud** → official iframe embed, lazy.
-- **Booking → Cal.com** (free): unlimited event types on the free plan, embeds like Calendly. Use the `@calcom/embed-react` widget. Owner will create the event types (DJ set / meeting / equipment) and put the username in `site.config.ts`.
+- **Booking → Cal.com** (free): unlimited event types on the free plan, embeds like Calendly. Use the `@calcom/embed-react` widget. Owner will create the event types (DJ set / meeting) and put the username in `site.config.ts`.
 - **Contact form → Web3Forms** (free, no backend): a plain form that POSTs to `https://api.web3forms.com/submit` with the owner's access key (stored in `site.config.ts` / an env var). It just emails skim. (Formspree is an equivalent fallback.)
 - Do **not** build any server, API route, or DB for any of the above.
 
@@ -293,11 +291,6 @@ export const site = {
   // gallery: [{ src: "/images/sets/xxx.webp", set: "the-pool", alt: "..." }, ...]
   gallery: [] as { src: string; set: string; alt: string }[],
 
-  // Equipment available to rent (owner fills)
-  equipment: [
-    // { name: "Pioneer DJ CDJ-3000 (pair)", img: "/images/gear/cdj.webp", note: "Setup available" },
-  ],
-
   booking: {
     calcomUser: "TODO-calcom-username",   // create at cal.com (free)
     web3formsKey: "TODO-web3forms-access-key", // get free key at web3forms.com
@@ -321,7 +314,7 @@ export const site = {
 
 **Phase 6 — Gallery.** Filterable set-photo gallery + lightbox, filtered by `set`.
 
-**Phase 7 — Equipment + Booking + Contact.** Equipment list with "request" → contact; `BookingEmbed` (Cal.com); `ContactForm` (Web3Forms).
+**Phase 7 — Booking + Contact.** `BookingEmbed` (Cal.com); `ContactForm` (Web3Forms).
 
 **Phase 8 — Performance + a11y pass.** Hit §10 and §11. Lighthouse on mobile. Lazy/compress everything. Reduced-motion review.
 

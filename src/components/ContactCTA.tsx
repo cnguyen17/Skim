@@ -1,5 +1,5 @@
 // src/components/ContactCTA.tsx
-// §6 contact beat on Home — routes to Booking + Equipment.
+// §6 contact beat on Home — routes to Booking.
 
 import { Link } from "react-router-dom";
 import { site } from "../data/site.config";
@@ -16,7 +16,7 @@ export function ContactCTA() {
         </Reveal>
         <Reveal>
           <h2 className="mt-5 max-w-3xl font-display text-5xl uppercase leading-[0.9] text-milk sm:text-7xl">
-            Book the set. Rent the gear. Let&apos;s make some noise.
+            Book the set. Let&apos;s make some noise.
           </h2>
         </Reveal>
         <Reveal>
@@ -26,12 +26,6 @@ export function ContactCTA() {
               className="rounded-full bg-accent px-6 py-3 font-mono text-xs uppercase tracking-[0.2em] text-ink transition-transform hover:-translate-y-0.5"
             >
               {site.ctas.booking.label}
-            </Link>
-            <Link
-              to={site.ctas.equipment.to}
-              className="rounded-full border border-line px-6 py-3 font-mono text-xs uppercase tracking-[0.2em] text-milk transition-colors hover:border-accent hover:text-accent"
-            >
-              {site.ctas.equipment.label}
             </Link>
           </div>
         </Reveal>
