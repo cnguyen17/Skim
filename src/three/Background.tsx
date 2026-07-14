@@ -5,12 +5,12 @@
 // chaotic, organic paint-swirl motion, with subtle pointer parallax.
 //
 // Two things drive it from the hero scroll:
-//   • uMix (0..1, from the shared `progress` ref) lerps the WHOLE field milk→ink:
-//     the base tone and the swirl tone are the SAME two color uniforms, just
-//     swapped, so the page "flips to dark" as you scroll while staying two-color.
-//   • the cyan-framed centerpiece keeps its own milk fill in the DOM (clipped by
-//     overflow + radius) — this shader no longer punches a light hole, so cream
-//     can't soft-bleed past the rounded blue border.
+//   • uMix (0..1, from the shared `progress` ref) lerps the field OUTSIDE the
+//     cyan frame milk→ink, so the page goes dark around the letterbox.
+//   • the live centerpiece rect (uBox*) keeps LIGHT marble IN motion inside the
+//     frame — not a flat milk DOM fill — so the cutout sits on the same cream
+//     swirl as the open hero. The mask is inset + AA'd under the cyan border so
+//     cream doesn't bleed past the rounded frame.
 //
 // Readability is a hard rule (brief): the marble is kept LOW-CONTRAST and dimmed
 // (uContrast + a vignette toward the base tone) so the hero face and headline stay
@@ -51,6 +51,7 @@ const fragmentFor = (lowPower: boolean) => /* glsl */ `
   uniform vec2  uMouse;       // eased pointer, -1..1
   uniform vec2  uBoxCenter;   // centerpiece rect center in screen UV
   uniform vec2  uBoxHalf;     // centerpiece rect half-size in screen UV
+  uniform vec2  uBoxRadius;   // corner radius in screen UV (x/y)
   uniform vec3  uColorLight;  // light tone  (token --milk)
   uniform vec3  uColorDark;   // dark tone   (token --ink)
   uniform vec3  uAccent;      // cyan highlight (very faint)
@@ -69,6 +70,13 @@ const fragmentFor = (lowPower: boolean) => /* glsl */ `
     float v = 0.0; float amp = 0.5;
     for(int i = 0; i < OCTAVES; i++){ v += amp * noise(p); p = p * 2.0 + vec2(11.3, 7.7); amp *= 0.5; }
     return v;
+  }
+
+  // Rounded rect SDF in screen UV. Negative = inside.
+  float sdRoundBox(vec2 uv, vec2 center, vec2 halfSize, vec2 radius){
+    float r = min(min(radius.x, radius.y), min(halfSize.x, halfSize.y));
+    vec2 q = abs(uv - center) - halfSize + r;
+    return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
   }
 
   void main(){
@@ -96,12 +104,13 @@ const fragmentFor = (lowPower: boolean) => /* glsl */ `
     f = clamp(f, 0.0, 1.0);
     f = smoothstep(0.36, 0.64, f);     // tighter band -> distinct, high-contrast veins
 
-    // Whole ambient field follows scroll mix. The milk interior of the cyan
-    // frame is the DOM window's own bg (overflow:hidden + radius) — so light
-    // never bleeds past the rounded blue border as a soft shader rect.
-    float m = uMix;
+    // Light marble stays inside the cyan frame; outside follows scroll → ink.
+    // Tiny AA under the DOM border so cream doesn't spill past the blue stroke.
+    float sd = sdRoundBox(uv, uBoxCenter, uBoxHalf, uBoxRadius);
+    float inside = 1.0 - smoothstep(-0.0015, 0.0015, sd);
+    float m = mix(uMix, 0.0, inside);
 
-    // Two color uniforms, lerped by scroll: base tone flips light->dark while the
+    // Two color uniforms, lerped by local mix: base tone flips light->dark while the
     // swirl tone is its opposite, so the swirl stays visible at both ends.
     vec3 base  = mix(uColorLight, uColorDark, m);
     vec3 swirl = mix(uColorDark,  uColorLight, m);
@@ -161,7 +170,8 @@ export function Background({
         uContrast: { value: contrast },
         uMouse: { value: new Vector2(0, 0) },
         uBoxCenter: { value: new Vector2(0.5, 0.5) },
-        uBoxHalf: { value: new Vector2(0, 0) },
+        uBoxHalf: { value: new Vector2(0.5, 0.5) },
+        uBoxRadius: { value: new Vector2(0, 0) },
         uColorLight: { value: c(colorLight) },
         uColorDark: { value: c(colorDark) },
         uAccent: { value: c(accent) },
@@ -174,7 +184,7 @@ export function Background({
     u.uTime.value += delta;
     u.uAspect.value = viewport.width / viewport.height;
 
-    // light→dark ramp — begins as soon as the window shrinks (early matte)
+    // Outside the frame: light→dark as the window shrinks. Inside stays light.
     const p = progress.current ?? 0;
     u.uMix.value = Math.min(1, Math.max(0, (p - 0.04) / 0.24));
 
@@ -193,11 +203,18 @@ export function Background({
       const H = vv?.height || window.innerHeight || 1;
       const ox = vv?.offsetLeft || 0;
       const oy = vv?.offsetTop || 0;
+      // Inset ~2px under the cyan stroke so cream stays inside the border.
+      const inset = 2;
+      const radius = 12;
       (u.uBoxCenter.value as Vector2).set(
         (r.left - ox + r.width / 2) / W,
         1 - (r.top - oy + r.height / 2) / H,
       );
-      (u.uBoxHalf.value as Vector2).set(r.width / 2 / W, r.height / 2 / H);
+      (u.uBoxHalf.value as Vector2).set(
+        Math.max(0, r.width / 2 - inset) / W,
+        Math.max(0, r.height / 2 - inset) / H,
+      );
+      (u.uBoxRadius.value as Vector2).set(radius / W, radius / H);
     }
   });
 

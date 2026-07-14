@@ -124,15 +124,12 @@ export const Centerpiece = forwardRef<
     settled?: boolean;
   }
 >(function Centerpiece({ variant, progress, settled = false }, ref) {
-  const narrow = useNarrowHero();
-  // Scale from near the face so zoom keeps the head framed (not bottom-locked).
-  const origin = narrow ? "50% 42%" : "50% 50%";
-
+  // Zoom from the bottom so the torso stays planted on the frame edge.
   return (
     <div
       ref={ref}
       className="absolute inset-0 h-full w-full will-change-transform"
-      style={{ transformOrigin: origin }}
+      style={{ transformOrigin: "50% 100%" }}
     >
       {variant === "face" ? (
         <FaceFilter progress={progress} settled={settled} />

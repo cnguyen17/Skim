@@ -93,8 +93,6 @@ export function Hero() {
     const frameColor =
       getComputedStyle(document.documentElement).getPropertyValue("--hero-frame").trim() ||
       "rgba(88,215,255,0.55)";
-    const milkColor =
-      getComputedStyle(document.documentElement).getPropertyValue("--milk").trim() || "#F7F2E8";
 
     // Lando-style: the portrait OPENS full-bleed (entire viewport), then the whole
     // screen minimizes to a centered letterbox. One frame — not a box on a bg.
@@ -123,9 +121,9 @@ export function Hero() {
     const m = framing.mobile;
     const scaleOpen = () => (isNarrow() && m ? m.scaleOpen : framing.scaleOpen);
     const scaleClosed = () => (isNarrow() && m ? m.scaleClosed : framing.scaleClosed);
-    const yOpen = () => (isNarrow() && m ? m.yOpen : 0);
-    const yMid = () => (isNarrow() && m ? m.yMid : -6);
-    const yClosed = () => (isNarrow() && m ? m.yClosed : -3);
+    const yOpen = () => (isNarrow() && m ? m.yOpen : framing.yOpen);
+    const yMid = () => (isNarrow() && m ? m.yMid : framing.yMid);
+    const yClosed = () => (isNarrow() && m ? m.yClosed : framing.yClosed);
     const xNudge = () => (isNarrow() && m ? m.xPercent : framing.xPercent);
 
     // Sync initial subject framing before the scrubbed timeline owns the transform.
@@ -171,20 +169,17 @@ export function Hero() {
         FRAME_EARLY,
       );
 
-      // Cyan frame + milk fill land together. Opening stays transparent so the
-      // marble Background shows through; milk only fills once the blue border is
-      // on (clipped by overflow+radius — no cream bleed outside the frame).
+      // Cyan frame only — window bg stays transparent so the marble canvas
+      // shows through the cutout alpha (same look as the open hero).
       tl.fromTo(
         windowRef.current,
         {
           borderColor: "rgba(88,215,255,0)",
           borderRadius: 0,
-          backgroundColor: "rgba(247,242,232,0)",
         },
         {
           borderColor: frameColor,
           borderRadius: 12,
-          backgroundColor: milkColor,
           duration: 0.07,
           ease: "power2.out",
         },
@@ -213,12 +208,32 @@ export function Hero() {
       // Studio shade on transparent PNG edges — follows the early shrink.
       tl.fromTo(shadeRef.current, { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "power2.out" }, 0.04);
 
-      // Side display text — fade in as the window recedes, exit before logo lands.
-      tl.fromTo(textTopRef.current, { yPercent: 90, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.08, ease: "power2.out" }, 0.04);
-      tl.to(textTopRef.current, { yPercent: -170, autoAlpha: 0, duration: 0.34 }, 0.22);
-
-      tl.fromTo(textBotRef.current, { yPercent: -90, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.08, ease: "power2.out" }, 0.04);
-      tl.to(textBotRef.current, { yPercent: -210, autoAlpha: 0, duration: 0.34 }, 0.22);
+      // Side copy hugs the cyan frame (DOM). Fade in together as the letterbox
+      // forms; hold while the handle is visible; exit together before the logo.
+      const TEXT_IN = 0.05;
+      const TEXT_OUT = 0.38;
+      tl.fromTo(
+        textTopRef.current,
+        { yPercent: 35, autoAlpha: 0 },
+        { yPercent: 0, autoAlpha: 1, duration: 0.1, ease: "power2.out" },
+        TEXT_IN,
+      );
+      tl.fromTo(
+        textBotRef.current,
+        { yPercent: -35, autoAlpha: 0 },
+        { yPercent: 0, autoAlpha: 1, duration: 0.1, ease: "power2.out" },
+        TEXT_IN,
+      );
+      tl.to(
+        textTopRef.current,
+        { yPercent: -40, autoAlpha: 0, duration: 0.16, ease: "power1.in" },
+        TEXT_OUT,
+      );
+      tl.to(
+        textBotRef.current,
+        { yPercent: 40, autoAlpha: 0, duration: 0.16, ease: "power1.in" },
+        TEXT_OUT,
+      );
 
       // Logo reveal: letters → full → halo → sparkles. Child tl duration is
       // capped at 0.36 so it fully completes by ~0.86, then a hold before exit.
@@ -298,54 +313,59 @@ export function Hero() {
         )}
       </div>
 
-      {/* Side display text — skim's own words (config). Stacked top/bottom and
-          centered so it always fits; GSAP rises + scrolls each row up and out. */}
-      {headline && (
-        <div className="pointer-events-none absolute inset-x-0 top-[10%] z-10 flex justify-center px-5 text-center">
-          <div ref={textTopRef} className={`${sideTextBase} font-display text-[7vw] sm:text-[3.6vw]`}>
-            {headline}
-          </div>
-        </div>
-      )}
-      {sub && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-[10%] z-10 flex justify-center px-5 text-center">
-          <div ref={textBotRef} className={`${sideTextBase} font-mono tracking-[0.06em] text-[6vw] sm:text-[3vw]`}>
-            {sub}
-          </div>
-        </div>
-      )}
-
+      {/* Side display text — skim's own words (config). Glued to the cyan
+          frame (above/below) so welcome + handle stay paired through the scrub. */}
       {/* Full-bleed stage → minimizes to center on scroll (Lando-style) */}
       <div className="absolute inset-0 z-20">
         <div ref={floatRef} className="absolute inset-0 flex items-center justify-center">
-          <div
-            ref={windowRef}
-            className={`relative isolate overflow-hidden border will-change-[width,height] ${
-              use3D
-                ? // Transparent at open so the marble canvas shows; GSAP fades in
-                  // milk with the cyan border (clipped — no cream bleed).
-                  "h-full w-full border-transparent bg-transparent"
-                : "scale-[0.62] rounded-xl border-[color:var(--hero-frame)] bg-[color:var(--milk)]"
-            }`}
-          >
+          <div className="relative">
+            {headline && (
+              <div className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2.5 w-max max-w-[min(92vw,48rem)] -translate-x-1/2 text-center sm:mb-3">
+                <div
+                  ref={textTopRef}
+                  className={`${sideTextBase} font-display text-[7vw] sm:text-[3.6vw]`}
+                >
+                  {headline}
+                </div>
+              </div>
+            )}
             <div
-              ref={shadeRef}
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_30%,rgba(247,242,232,0)_35%,rgba(15,14,12,0.12)_72%,rgba(15,14,12,0.28)_100%)] opacity-0"
-            />
-            <Centerpiece
-              ref={subjectRef}
-              variant={site.hero.centerpiece}
-              progress={progress}
-              settled={!use3D}
-            />
-            {/* Logo assembles over the framed face as the window zooms out */}
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <LogoReveal
-                ref={logoRevealRef}
-                assembled={!use3D}
-                className="h-auto w-[86%] drop-shadow-[0_0_30px_rgba(88,215,255,0.2)]"
+              ref={windowRef}
+              className={`relative isolate overflow-hidden border bg-transparent will-change-[width,height] ${
+                use3D
+                  ? "h-full w-full border-transparent"
+                  : "scale-[0.62] rounded-xl border-[color:var(--hero-frame)]"
+              }`}
+            >
+              <div
+                ref={shadeRef}
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_30%,rgba(247,242,232,0)_35%,rgba(15,14,12,0.12)_72%,rgba(15,14,12,0.28)_100%)] opacity-0"
               />
+              <Centerpiece
+                ref={subjectRef}
+                variant={site.hero.centerpiece}
+                progress={progress}
+                settled={!use3D}
+              />
+              {/* Logo assembles over the framed face as the window zooms out */}
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <LogoReveal
+                  ref={logoRevealRef}
+                  assembled={!use3D}
+                  className="h-auto w-[86%] drop-shadow-[0_0_30px_rgba(88,215,255,0.2)]"
+                />
+              </div>
             </div>
+            {sub && (
+              <div className="pointer-events-none absolute top-full left-1/2 z-30 mt-2.5 w-max max-w-[min(92vw,48rem)] -translate-x-1/2 text-center sm:mt-3">
+                <div
+                  ref={textBotRef}
+                  className={`${sideTextBase} font-mono tracking-[0.06em] text-[6vw] sm:text-[3vw]`}
+                >
+                  {sub}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

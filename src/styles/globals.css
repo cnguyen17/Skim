@@ -195,6 +195,11 @@ a:focus-visible .roll .rl::after {
   align-items: center;
   gap: 1.25rem;
 }
+.fridge3d__spacer {
+  width: 100%;
+  /* Match inline stage height so scroll doesn't jump when the stage goes fixed. */
+  height: clamp(420px, 68vh, 720px);
+}
 .fridge3d__stage {
   position: relative;
   width: 100%;
@@ -206,6 +211,36 @@ a:focus-visible .roll .rl::after {
     radial-gradient(120% 90% at 50% 0%, rgba(88, 215, 255, 0.06), transparent 55%),
     linear-gradient(180deg, var(--ink-2), var(--ink));
   border: 1px solid var(--line);
+  transition: border-radius 0.35s ease;
+}
+/* Fullscreen overlay — same WebGL scene, just bigger. Above nav (z-50). */
+.fridge3d--expanded .fridge3d__stage {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  width: 100%;
+  height: 100dvh;
+  max-height: none;
+  border-radius: 0;
+  border: 0;
+}
+/* Leave the bottom chrome clear so the zoomed cabinet isn't under the controls. */
+.fridge3d--expanded .fridge3d__mount {
+  bottom: 5.75rem;
+}
+.fridge3d--expanded .fridge3d__ui {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 71;
+  justify-content: center;
+  padding: 1.25rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent, rgba(15, 14, 12, 0.78) 40%);
+  pointer-events: none;
+}
+.fridge3d--expanded .fridge3d__ui > * {
+  pointer-events: auto;
 }
 .fridge3d__mount {
   position: absolute;
@@ -233,31 +268,49 @@ a:focus-visible .roll .rl::after {
 }
 
 /* Category leader-line labels (draw out when the fridge opens). */
+/* Category leader-line labels (draw out when the fridge opens). */
 .fridge3d__label {
   position: absolute;
   z-index: 2;
-  transform: translateY(-50%);
+  transform: translate(8px, -50%);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   pointer-events: none;
 }
 .fridge3d__label-line {
-  width: 42px;
-  height: 1px;
+  width: 56px;
+  height: 2.5px;
   background: var(--accent);
+  border-radius: 2px;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 55%, transparent);
   transform-origin: left center;
   animation: fridge-draw 0.5s ease both;
 }
 .fridge3d__label-text {
   font-family: var(--font-mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.18em;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--accent);
   white-space: nowrap;
   opacity: 0;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.95),
+    0 0 14px rgba(0, 0, 0, 0.75);
   animation: fridge-fade 0.4s ease 0.35s both;
+}
+.fridge3d--expanded .fridge3d__label {
+  transform: translate(18px, -50%);
+}
+.fridge3d--expanded .fridge3d__label-line {
+  width: 78px;
+  height: 3px;
+}
+.fridge3d--expanded .fridge3d__label-text {
+  font-size: 0.95rem;
+  letter-spacing: 0.22em;
 }
 @keyframes fridge-draw {
   from { transform: scaleX(0); }
@@ -301,12 +354,17 @@ a:focus-visible .roll .rl::after {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-/* Close button — top-right of the stage while a carton is open. */
-.fridge3d__close {
+/* Stage chrome — Close + enlarge icon, top-right inside the frame. */
+.fridge3d__chrome {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: max(12px, env(safe-area-inset-top));
+  right: 12px;
   z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fridge3d__close {
   font-family: var(--font-mono);
   font-size: 0.65rem;
   letter-spacing: 0.18em;
@@ -319,6 +377,28 @@ a:focus-visible .roll .rl::after {
   cursor: pointer;
 }
 .fridge3d__close:hover { background: color-mix(in srgb, var(--accent) 80%, #fff); }
+.fridge3d__enlarge {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--milk);
+  background: rgba(15, 14, 12, 0.55);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.12s ease;
+}
+.fridge3d__enlarge:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.fridge3d__enlarge:active { transform: scale(0.95); }
+.fridge3d__enlarge[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 
 /* Control bar under the stage. */
 .fridge3d__ui {
@@ -351,6 +431,10 @@ a:focus-visible .roll .rl::after {
 
 @media (max-width: 640px) {
   .fridge3d__hint { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fridge3d__stage { transition: none; }
 }
 
 /* ---- Gallery page slide (§6) -------------------------------------------- */

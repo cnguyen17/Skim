@@ -11,6 +11,7 @@ import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { site } from "../data/site.config";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { useLenis } from "./LenisProvider";
 import { WorkTabs } from "./WorkTabs";
 import type { FridgeItem, FridgeLayout, FridgeScreen } from "../three/FridgeScene";
 
@@ -84,7 +85,9 @@ function buildItems(): { items: FridgeItem[]; media: Record<string, Media> } {
 export function WorkFridge() {
   const isSmall = useMediaQuery("(max-width: 768px)");
   const reducedMotion = useReducedMotion();
+  const lenis = useLenis();
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [layout, setLayout] = useState<FridgeLayout>({ producing: null, sets: null });
   const [screen, setScreen] = useState<FridgeScreen>(null);
@@ -94,16 +97,29 @@ export function WorkFridge() {
   const [hasWebgl, setHasWebgl] = useState<boolean | null>(null);
   useEffect(() => setHasWebgl(webglAvailable()), []);
 
-  // Esc closes the player, then the fridge.
+  // Lock page scroll while the fridge fills the viewport.
+  useEffect(() => {
+    if (!expanded) return;
+    lenis?.stop();
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      lenis?.start();
+      document.body.style.overflow = prev;
+    };
+  }, [expanded, lenis]);
+
+  // Esc: close player → exit fullscreen → close fridge.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       if (activeKey) setActiveKey(null);
+      else if (expanded) setExpanded(false);
       else if (open) setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeKey, open]);
+  }, [activeKey, expanded, open]);
 
   // Fallback path — the original accessible tabbed grid.
   if (isSmall || reducedMotion || hasWebgl === false) return <WorkTabs />;
@@ -122,8 +138,16 @@ export function WorkFridge() {
   };
 
   return (
-    <div className="fridge3d">
-      <div className="fridge3d__stage">
+    <div className={`fridge3d${expanded ? " fridge3d--expanded" : ""}`}>
+      {/* Holds scroll layout while the stage is position:fixed. */}
+      {expanded && <div className="fridge3d__spacer" aria-hidden />}
+
+      <div
+        className="fridge3d__stage"
+        role={expanded ? "dialog" : undefined}
+        aria-modal={expanded ? true : undefined}
+        aria-label={expanded ? "Fridge — fullscreen" : undefined}
+      >
         {/* hasWebgl===null on first paint: render nothing heavy until probed. */}
         {hasWebgl && (
           <Suspense fallback={<div className="fridge3d__loading">Loading the fridge…</div>}>
@@ -131,6 +155,7 @@ export function WorkFridge() {
               items={items}
               open={open}
               selectedKey={activeKey}
+              expanded={expanded}
               onToggle={toggle}
               onSelect={select}
               onLayout={setLayout}
@@ -193,16 +218,51 @@ export function WorkFridge() {
           </div>
         )}
 
-        {/* Close affordance while a carton is open. */}
-        {active && (
-          <button type="button" className="fridge3d__close" onClick={() => setActiveKey(null)}>
-            Close
+        {/* Stage chrome — enlarge lives inside the frame; Close when a carton is open. */}
+        <div className="fridge3d__chrome">
+          {active && (
+            <button type="button" className="fridge3d__close" onClick={() => setActiveKey(null)}>
+              Put carton back
+            </button>
+          )}
+          <button
+            type="button"
+            className="fridge3d__enlarge"
+            aria-label={expanded ? "Exit fullscreen" : "Enlarge fridge"}
+            aria-pressed={expanded}
+            onClick={() => setExpanded((e) => !e)}
+          >
+            {expanded ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
           </button>
-        )}
+        </div>
       </div>
 
       <div className="fridge3d__ui">
-        <span className="fridge3d__hint">Click the fridge to open it, then pick a carton</span>
+        <span className="fridge3d__hint">
+          {expanded
+            ? "Click the fridge to open it, then pick a carton — Esc to exit"
+            : "Click the fridge to open it, then pick a carton"}
+        </span>
         <button type="button" className="fridge3d__toggle" aria-pressed={open} onClick={toggle}>
           {open ? "Close fridge" : "Open the fridge"}
         </button>

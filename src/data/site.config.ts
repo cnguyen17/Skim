@@ -42,9 +42,9 @@ export const site = {
     // `site.handle` (shown as @MYNAMEIZSKIM via CSS uppercase), so the handle
     // stays a single source of truth.
     outro: { headline: "WELCOME TO THE FRIDGE" },
-    // variant="face": transparent PNGs (same cutouts as source headshots 3–13),
-    // position-registered in `aligned/` so the swap reads as glasses changing.
-    // Alpha is preserved so the marble/milk shows through — no black plate.
+    // variant="face": transparent PNGs (source headshots 3–14), position-registered
+    // in `aligned/` so the swap reads as glasses changing. Alpha preserved so
+    // marble shows through. Cycle settles on headshot-14.
     faceFrames: [
       "/images/sets/Skim/aligned/skim-headshot-3.png",
       "/images/sets/Skim/aligned/skim-headshot-4.png",
@@ -57,29 +57,32 @@ export const site = {
       "/images/sets/Skim/aligned/skim-headshot-11.png",
       "/images/sets/Skim/aligned/skim-headshot-12.png",
       "/images/sets/Skim/aligned/skim-headshot-13.png",
+      "/images/sets/Skim/aligned/skim-headshot-14.png",
     ] as string[],
-    settleFrame: 10, // lands on headshot-13
+    settleFrame: 11, // lands on headshot-14
     // Framing for face-aligned 1600×1067 transparent PNGs.
-    // Desktop: object-contain keeps full head + shoulders.
-    // Mobile: cover focused on the face — headroom above, shirt cropped at bottom.
+    // Bottom-planted: torso rests on the cyan frame edge the whole scrub
+    // (overflow clips headroom; scale grows from the bottom).
     // xPercent stays 0 so the cutout sits centered in the cyan frame.
     faceFraming: {
       objectFit: "contain" as const,
-      objectPosition: "50% 50%",
-      scaleOpen: 1,
-      scaleClosed: 1.06,
+      objectPosition: "50% 100%",
+      scaleOpen: 1.1,
+      scaleClosed: 1.14,
       xPercent: 0,
+      yOpen: 0,
+      yMid: 0,
+      yClosed: 0,
       mobile: {
         objectFit: "cover" as const,
-        objectPosition: "50% 42%",
-        scaleOpen: 1.2,
-        scaleClosed: 1.24,
+        objectPosition: "50% 100%",
+        scaleOpen: 1.22,
+        scaleClosed: 1.26,
         xPercent: 0,
-        // Push down inside the overflow-hidden window: milk headroom above the
-        // beanie, more shirt cropped at the bottom — head reads mid-frame.
-        yOpen: 22,
-        yMid: 14,
-        yClosed: 8,
+        // Keep planting the torso on the frame bottom (cover + bottom origin).
+        yOpen: 0,
+        yMid: 0,
+        yClosed: 0,
       },
     },
   },

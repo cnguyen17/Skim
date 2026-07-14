@@ -71,6 +71,7 @@ export default function FridgeScene({
   items,
   open,
   selectedKey,
+  expanded = false,
   onToggle,
   onSelect,
   onLayout,
@@ -79,6 +80,8 @@ export default function FridgeScene({
   items: FridgeItem[];
   open: boolean;
   selectedKey: string | null;
+  /** Fullscreen mode — zoom onto the cabinet so it fills the viewport top-to-bottom. */
+  expanded?: boolean;
   onToggle: () => void;
   onSelect: (key: string) => void;
   onLayout: (layout: FridgeLayout) => void;
@@ -87,6 +90,8 @@ export default function FridgeScene({
   const mountRef = useRef<HTMLDivElement | null>(null);
   const targetAngleRef = useRef(0);
   const fallenKeyRef = useRef<string | null>(null);
+  const expandedRef = useRef(expanded);
+  const frameCameraRef = useRef<() => void>(() => {});
 
   // Latest-callback refs so the scene (built once) always calls current handlers.
   const onToggleRef = useRef(onToggle);
@@ -108,6 +113,12 @@ export default function FridgeScene({
   useEffect(() => {
     fallenKeyRef.current = selectedKey;
   }, [selectedKey]);
+
+  // Entering/leaving fullscreen — recompute framing (zoom still tracks door openness).
+  useEffect(() => {
+    expandedRef.current = expanded;
+    frameCameraRef.current();
+  }, [expanded]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -612,26 +623,91 @@ export default function FridgeScene({
 
     // ---- camera ----
     const target = new THREE.Vector3(0, H * 0.5, 0);
-    const producingAnchor = new THREE.Vector3(W * 0.4, yProd + 0.34, D / 2);
+    // Anchors sit just past the cabinet's right edge so leader-lines start outside the fridge.
+    const producingAnchor = new THREE.Vector3(W * 0.5 + 0.12, yProd + 0.34, D / 2);
     // Point at the TOP of the middle row (where DJ Sets start), not mid-cavity.
-    const setsAnchor = new THREE.Vector3(W * 0.4, yBlue + 0.62, D / 2);
+    const setsAnchor = new THREE.Vector3(W * 0.5 + 0.12, yBlue + 0.62, D / 2);
     function project(v: THREE.Vector3) {
       const p = v.clone().project(camera);
       return { x: p.x * 0.5 + 0.5, y: -p.y * 0.5 + 0.5 };
     }
-    function frameCamera() {
+
+    let lastLayout = { producing: null as { x: number; y: number } | null, sets: null as { x: number; y: number } | null };
+    function reportLayout() {
+      const producing = project(producingAnchor);
+      const sets = project(setsAnchor);
+      const moved =
+        !lastLayout.producing ||
+        !lastLayout.sets ||
+        Math.abs(producing.x - lastLayout.producing.x) > 0.004 ||
+        Math.abs(producing.y - lastLayout.producing.y) > 0.004 ||
+        Math.abs(sets.x - lastLayout.sets.x) > 0.004 ||
+        Math.abs(sets.y - lastLayout.sets.y) > 0.004;
+      if (!moved) return;
+      lastLayout = { producing, sets };
+      onLayoutRef.current(lastLayout);
+    }
+
+    /** Expanded framing: 0 = overview (whole closed fridge), 1 = cabinet fills the screen. */
+    function camExpanded(openness: number) {
       const aspect = Math.max(camera.aspect || 1, 0.01);
       const vFovHalf = THREE.MathUtils.degToRad(camera.fov) / 2;
-      const fitHeight = H * 1.35;
-      const fitWidth = W * 2.4;
-      const distH = fitHeight / 2 / Math.tan(vFovHalf);
-      const distW = fitWidth / 2 / (Math.tan(vFovHalf) * aspect);
-      const dist = Math.max(distH, distW) + D * 0.55;
-      camera.position.set(0, target.y * 0.96, dist);
-      camera.lookAt(target);
-      camera.updateMatrixWorld();
-      onLayoutRef.current({ producing: project(producingAnchor), sets: project(setsAnchor) });
+
+      const overviewH = H * 1.3;
+      const overviewW = W * 1.65;
+      const ovDistH = overviewH / 2 / Math.tan(vFovHalf);
+      const ovDistW = overviewW / 2 / (Math.tan(vFovHalf) * aspect);
+      const overviewZ = Math.max(ovDistH, ovDistW) + D * 0.5;
+
+      const detailH = H * 1.02;
+      const detailZ = detailH / 2 / Math.tan(vFovHalf) + D * 0.35;
+
+      const z = THREE.MathUtils.lerp(overviewZ, detailZ, openness);
+      const y = THREE.MathUtils.lerp(target.y * 0.96, H * 0.5, openness);
+      const lookY = THREE.MathUtils.lerp(target.y, H * 0.5, openness);
+      return { y, z, lookY };
     }
+
+    /** Inline (on-page) framing — same open/close dolly as expanded, fit to the stage. */
+    function camInline(openness: number) {
+      const aspect = Math.max(camera.aspect || 1, 0.01);
+      const vFovHalf = THREE.MathUtils.degToRad(camera.fov) / 2;
+
+      const overviewH = H * 1.35;
+      const overviewW = W * 2.4;
+      const ovDistH = overviewH / 2 / Math.tan(vFovHalf);
+      const ovDistW = overviewW / 2 / (Math.tan(vFovHalf) * aspect);
+      const overviewZ = Math.max(ovDistH, ovDistW) + D * 0.55;
+
+      // Fill the stage height with the cabinet (doors crop off the sides).
+      const detailH = H * 1.06;
+      const detailZ = detailH / 2 / Math.tan(vFovHalf) + D * 0.35;
+
+      const z = THREE.MathUtils.lerp(overviewZ, detailZ, openness);
+      const y = THREE.MathUtils.lerp(target.y * 0.96, H * 0.5, openness);
+      const lookY = THREE.MathUtils.lerp(target.y, H * 0.5, openness);
+      return { y, z, lookY };
+    }
+
+    function applyCam(g: { y: number; z: number; lookY: number }) {
+      camera.position.set(0, g.y, g.z);
+      camera.lookAt(0, g.lookY, 0);
+      camera.updateMatrixWorld();
+    }
+
+    function doorOpenness() {
+      if (doorPivots[0]) {
+        return THREE.MathUtils.clamp(doorPivots[0].rotation.y / OPEN_ANGLE, 0, 1);
+      }
+      return targetAngleRef.current === 0 ? 0 : 1;
+    }
+
+    function frameCamera() {
+      const openness = doorOpenness();
+      applyCam(expandedRef.current ? camExpanded(openness) : camInline(openness));
+      reportLayout();
+    }
+    frameCameraRef.current = frameCamera;
 
     // ---- pointer ----
     const raycaster = new THREE.Raycaster();
@@ -725,6 +801,10 @@ export default function FridgeScene({
         : 0;
       innerLight.intensity = openness * 0.55;
 
+      // Camera dollies with the doors in both modes — overview when closed, fill when open.
+      applyCam(expandedRef.current ? camExpanded(openness) : camInline(openness));
+      if (openness > 0.08) reportLayout();
+
       const camZ = camera.position.z;
       for (const g of cartonGroups) {
         const rest = g.userData.rest as { x: number; y: number; z: number };
@@ -757,6 +837,7 @@ export default function FridgeScene({
       ro.disconnect();
       io.disconnect();
       mount.removeEventListener("click", onClick);
+      frameCameraRef.current = () => {};
       for (const d of disposables) d.dispose();
       pmrem.dispose();
       renderer.dispose();
