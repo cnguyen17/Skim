@@ -17,6 +17,7 @@ import {
   Component,
   Suspense,
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -143,10 +144,28 @@ function buildRig(source: Group): Rig {
 const WORLD_UP = new Vector3(0, 1, 0);
 const WORLD_RIGHT = new Vector3(1, 0, 0);
 
-function Bear({ reducedMotion }: { reducedMotion: boolean }) {
+function Bear({
+  reducedMotion,
+  onReady,
+}: {
+  reducedMotion: boolean;
+  onReady?: () => void;
+}) {
   const { scene } = useGLTF(BEAR_URL);
   const { pointer } = useThree();
   const rig = useMemo(() => buildRig(scene as unknown as Group), [scene]);
+
+  useEffect(() => {
+    // Wait two frames so the first lit draw lands before we crossfade in.
+    let id2 = 0;
+    const id1 = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => onReady?.());
+    });
+    return () => {
+      cancelAnimationFrame(id1);
+      cancelAnimationFrame(id2);
+    };
+  }, [onReady, scene]);
 
   // scratch quaternions reused each frame
   const qWorld = useRef(new Quaternion());
@@ -304,9 +323,11 @@ function BioFraming({ children }: { children: ReactNode }) {
 export function BearMilkScene({
   milk: _milk,
   reducedMotion = false,
+  onReady,
 }: {
   milk: string;
   reducedMotion?: boolean;
+  onReady?: () => void;
 }) {
   return (
     <>
@@ -324,8 +345,8 @@ export function BearMilkScene({
       <BioFraming>
         <Label />
         <BearErrorBoundary fallback={<PlaceholderBear />}>
-          <Suspense fallback={<PlaceholderBear />}>
-            <Bear reducedMotion={reducedMotion} />
+          <Suspense fallback={null}>
+            <Bear reducedMotion={reducedMotion} onReady={onReady} />
           </Suspense>
         </BearErrorBoundary>
       </BioFraming>

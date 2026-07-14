@@ -33,17 +33,33 @@
       rel="stylesheet"
     />
 
-    <!-- Hero face frames — kick off early so the loader can wait on them. -->
+    <!-- Hero face frames — all ~50KB WebPs; preload from first paint. -->
     <link rel="preload" as="image" type="image/webp" href="/images/sets/Skim/aligned/skim-headshot-3.webp" />
+    <link rel="preload" as="image" type="image/webp" href="/images/sets/Skim/aligned/skim-headshot-4.webp" />
+    <link rel="preload" as="image" type="image/webp" href="/images/sets/Skim/aligned/skim-headshot-5.webp" />
+    <link rel="preload" as="image" type="image/webp" href="/images/sets/Skim/aligned/skim-headshot-6.webp" />
+    <link rel="preload" as="image" type="image/webp" href="/images/sets/Skim/aligned/skim-headshot-7.webp" />
+    <link rel="preload" as="image" type="image/webp" href="/images/sets/Skim/aligned/skim-headshot-8.webp" />
+    <link rel="preload" as="image" type="image/webp" href="/images/sets/Skim/aligned/skim-headshot-9.webp" />
+    <link rel="preload" as="image" type="image/webp" href="/images/sets/Skim/aligned/skim-headshot-10.webp" />
+    <link rel="preload" as="image" type="image/webp" href="/images/sets/Skim/aligned/skim-headshot-11.webp" />
+    <link rel="preload" as="image" type="image/webp" href="/images/sets/Skim/aligned/skim-headshot-12.webp" />
+    <link rel="preload" as="image" type="image/webp" href="/images/sets/Skim/aligned/skim-headshot-13.webp" />
     <link rel="preload" as="image" type="image/webp" href="/images/sets/Skim/aligned/skim-headshot-14.webp" />
 
-    <!-- Bio bear+carton GLB — start fetching while the hero paints (§10). -->
+    <!-- Bio bear+carton GLB — start before the JS app even parses. -->
     <link
       rel="preload"
       href="/models/bear-carton.glb"
       as="fetch"
       crossorigin
     />
+    <script>
+      // Fire the bear download immediately (don't wait for the Vite module graph).
+      try {
+        fetch("/models/bear-carton.glb", { mode: "cors", credentials: "same-origin" });
+      } catch (_) {}
+    </script>
 
     <title>skim — prod. skim | dj skim</title>
   </head>

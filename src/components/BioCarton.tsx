@@ -1,12 +1,11 @@
 // src/components/BioCarton.tsx
 // Bio's right-column signature piece. Replaces the 2D Nutrition-Facts card slot
 // with the 3D bear+carton scene, while keeping the 2D <NutritionFacts /> card as
-// the graceful fallback under reduced-motion / no-WebGL (§8/§11). The card is also
-// what the scene bakes into the carton's label texture, so it's never wasted.
+// the graceful fallback under reduced-motion / no-WebGL (§8/§11).
 //
-// Perf (§10): the R3F/three/drei + scene chunk is lazy-loaded; Home preloads
-// the GLB + chunk on idle so by the time Bio scrolls in the canvas mounts warm.
-// Canvas mounts once near the viewport and stays mounted (no remount/reparse).
+// While the GLB / three chunk is still cold, a compact NutritionFacts card sits in
+// the lower (carton) zone only — never stretched into the upper ear-overlap area
+// that the 3D bear intentionally occupies. Bear stage size stays unchanged.
 
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "../hooks/useReducedMotion";
@@ -26,21 +25,34 @@ function webglAvailable() {
   }
 }
 
+/** Card centered in the bear stage — sized to read near the bio copy column. */
+function LoadingFacts() {
+  return (
+    <div className="absolute inset-0 z-0 flex items-center justify-center px-6">
+      <div className="w-full max-w-[28rem]">
+        <NutritionFacts />
+      </div>
+    </div>
+  );
+}
+
 export function BioCarton() {
   const reducedMotion = useReducedMotion();
   const ref = useRef<HTMLDivElement | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const [nearView, setNearView] = useState(false);
+  const [assetsReady, setAssetsReady] = useState(false);
+  const [sceneReady, setSceneReady] = useState(false);
   const use3D = !reducedMotion && webglAvailable();
 
   // Mount once when within ~1.5 viewports — stay mounted so scroll away/back
   // doesn't re-decode the meshopt GLB or rebuild the head skin.
   useEffect(() => {
     const el = ref.current;
-    if (!el || !use3D || mounted) return;
+    if (!el || !use3D || nearView) return;
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setMounted(true);
+          setNearView(true);
           io.disconnect();
         }
       },
@@ -48,32 +60,56 @@ export function BioCarton() {
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [use3D, mounted]);
+  }, [use3D, nearView]);
 
-  // Label raster + bear assets (no-ops if Home already kicked them off).
+  // Label raster + bear assets (no-ops if Home/Loader already kicked them off).
   useEffect(() => {
     if (!use3D) return;
     preloadLabelTexture();
-    preloadBearAssets();
+    void preloadBearAssets().then(() => setAssetsReady(true));
   }, [use3D]);
 
-  // Reduced motion / no WebGL → the calm 2D card (fully usable, no canvas).
-  if (!use3D) return <NutritionFacts />;
+  // Reduced motion / no WebGL → card in the section body (offset cancels Bio -mt).
+  if (!use3D) {
+    return (
+      <div className="ml-auto w-full max-w-[22rem] pt-[8.5rem]">
+        <NutritionFacts />
+      </div>
+    );
+  }
+
+  const showCanvas = nearView && assetsReady;
 
   return (
-    // Fixed 780×800 stage on desktop (the size you dialed in via devtools). Bottom-
-    // anchored in the column so height grows upward; overflow visible = no clip frame.
     <div
       ref={ref}
       className="bio-bear relative ml-auto h-[min(22rem,58svh)] w-full overflow-visible sm:h-[min(28rem,62svh)] lg:h-[800px] lg:w-[780px] lg:max-w-none lg:shrink-0"
     >
-      {mounted ? (
-        <Suspense fallback={<NutritionFacts />}>
-          <BioCartonCanvas reducedMotion={reducedMotion} />
-        </Suspense>
-      ) : (
-        <NutritionFacts />
-      )}
+      {/* Placeholder only in the lower carton band — not the upper ear overhang. */}
+      <div
+        className="transition-opacity duration-500"
+        style={{
+          opacity: sceneReady ? 0 : 1,
+          pointerEvents: sceneReady ? "none" : "auto",
+        }}
+        aria-hidden={sceneReady}
+      >
+        <LoadingFacts />
+      </div>
+
+      {showCanvas ? (
+        <div
+          className="absolute inset-0 z-[1] transition-opacity duration-500"
+          style={{ opacity: sceneReady ? 1 : 0 }}
+        >
+          <Suspense fallback={null}>
+            <BioCartonCanvas
+              reducedMotion={reducedMotion}
+              onReady={() => setSceneReady(true)}
+            />
+          </Suspense>
+        </div>
+      ) : null}
     </div>
   );
 }

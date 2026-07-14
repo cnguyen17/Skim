@@ -14,17 +14,11 @@ import { useReducedMotion } from "../hooks/useReducedMotion";
 export default function Home() {
   const reducedMotion = useReducedMotion();
 
-  // After the hero has had a beat to paint, warm the bear GLB + R3F chunk so
-  // Bio can mount the scene without a cold multi-second (or worse) fetch.
+  // Warm the bear GLB + R3F chunk as soon as Home mounts (Loader also kicks
+  // this earlier). Prefer immediate start so Bio never hits a cold 3MB fetch.
   useEffect(() => {
     if (reducedMotion) return;
-    const kick = () => preloadBearAssets();
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      const id = window.requestIdleCallback(kick, { timeout: 1500 });
-      return () => window.cancelIdleCallback(id);
-    }
-    const t = globalThis.setTimeout(kick, 400);
-    return () => globalThis.clearTimeout(t);
+    void preloadBearAssets();
   }, [reducedMotion]);
 
   return (

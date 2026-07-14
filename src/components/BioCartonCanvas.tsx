@@ -3,8 +3,8 @@
 // three.js / R3F / drei are code-split and only fetched when Bio mounts this (§10),
 // and lazy-mounted by BioCarton only while the section is near the viewport.
 //
-// Brand colors come from the CSS tokens (§3). No OrbitControls here — the camera
-// is fixed; the only motion is the bear's idle float + clamped cursor-tilt.
+// Clear color is transparent so NutritionFacts can sit underneath until the bear
+// reports ready (no black flash). Brand colors come from the CSS tokens (§3).
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
@@ -24,8 +24,10 @@ function token(name: string, fallback: string) {
 
 export default function BioCartonCanvas({
   reducedMotion = false,
+  onReady,
 }: {
   reducedMotion?: boolean;
+  onReady?: () => void;
 }) {
   const milk = useMemo(() => token("--milk", "#F7F2E8"), []);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -50,13 +52,23 @@ export default function BioCartonCanvas({
         dpr={[1, 1.75]}
         shadows
         frameloop={visible ? "always" : "never"}
-        // fixed framing (see CAMERA in BearMilkScene) — sized to fit the whole bear
         camera={{ position: [0, CAMERA.y, CAMERA.z], fov: CAMERA.fov }}
-        gl={{ antialias: true, powerPreference: "high-performance" }}
-        className="!absolute inset-0"
+        gl={{
+          antialias: true,
+          alpha: true,
+          powerPreference: "high-performance",
+        }}
+        onCreated={({ gl }) => {
+          gl.setClearColor(0x000000, 0);
+        }}
+        className="!absolute inset-0 !bg-transparent"
       >
         <Suspense fallback={null}>
-          <BearMilkScene milk={milk} reducedMotion={reducedMotion} />
+          <BearMilkScene
+            milk={milk}
+            reducedMotion={reducedMotion}
+            onReady={onReady}
+          />
         </Suspense>
       </Canvas>
     </div>

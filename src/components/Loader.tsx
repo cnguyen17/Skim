@@ -28,7 +28,6 @@ export function Loader() {
     sessionStorage.setItem(SEEN_KEY, "1");
 
     if (reducedMotion) {
-      void preloadHeroAssets(4_000);
       setShow(false);
       return;
     }
@@ -36,7 +35,8 @@ export function Loader() {
     let cancelled = false;
     document.body.style.overflow = "hidden";
 
-    // Start fetching/decoding faces in parallel with the logo intro.
+    // Prefetch already started in index.html + main.tsx; await faces here
+    // so the wipe only happens once the hero is decode-ready.
     const assetsReady = preloadHeroAssets(12_000);
 
     const ctx = gsap.context(() => {
