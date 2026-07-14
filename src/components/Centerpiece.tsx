@@ -12,6 +12,7 @@
 
 import { forwardRef, useEffect, useState, type RefObject } from "react";
 import { site } from "../data/site.config";
+import { preloadHeroAssets } from "../lib/preloadHero";
 
 function LogoSubject() {
   return (
@@ -68,12 +69,9 @@ function FaceFilter({
   const objectFit = narrow && mobile ? mobile.objectFit : framing.objectFit;
   const objectPosition = narrow && mobile ? mobile.objectPosition : framing.objectPosition;
 
-  // Preload every frame once so the swap never flickers on first reveal.
+  // Ensure frames are decoded (shared with Loader) so opacity swaps never flicker.
   useEffect(() => {
-    frames.forEach((src) => {
-      const img = new Image();
-      img.src = src;
-    });
+    void preloadHeroAssets();
   }, [frames]);
 
   useEffect(() => {
@@ -109,6 +107,8 @@ function FaceFilter({
             objectPosition,
             opacity: i === idx ? 1 : 0,
           }}
+          decoding="async"
+          fetchPriority={i === 0 || i === settleFrame ? "high" : "low"}
           draggable={false}
         />
       ))}

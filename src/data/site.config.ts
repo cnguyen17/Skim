@@ -46,18 +46,18 @@ export const site = {
     // in `aligned/` so the swap reads as glasses changing. Alpha preserved so
     // marble shows through. Cycle settles on headshot-14.
     faceFrames: [
-      "/images/sets/Skim/aligned/skim-headshot-3.png",
-      "/images/sets/Skim/aligned/skim-headshot-4.png",
-      "/images/sets/Skim/aligned/skim-headshot-5.png",
-      "/images/sets/Skim/aligned/skim-headshot-6.png",
-      "/images/sets/Skim/aligned/skim-headshot-7.png",
-      "/images/sets/Skim/aligned/skim-headshot-8.png",
-      "/images/sets/Skim/aligned/skim-headshot-9.png",
-      "/images/sets/Skim/aligned/skim-headshot-10.png",
-      "/images/sets/Skim/aligned/skim-headshot-11.png",
-      "/images/sets/Skim/aligned/skim-headshot-12.png",
-      "/images/sets/Skim/aligned/skim-headshot-13.png",
-      "/images/sets/Skim/aligned/skim-headshot-14.png",
+      "/images/sets/Skim/aligned/skim-headshot-3.webp",
+      "/images/sets/Skim/aligned/skim-headshot-4.webp",
+      "/images/sets/Skim/aligned/skim-headshot-5.webp",
+      "/images/sets/Skim/aligned/skim-headshot-6.webp",
+      "/images/sets/Skim/aligned/skim-headshot-7.webp",
+      "/images/sets/Skim/aligned/skim-headshot-8.webp",
+      "/images/sets/Skim/aligned/skim-headshot-9.webp",
+      "/images/sets/Skim/aligned/skim-headshot-10.webp",
+      "/images/sets/Skim/aligned/skim-headshot-11.webp",
+      "/images/sets/Skim/aligned/skim-headshot-12.webp",
+      "/images/sets/Skim/aligned/skim-headshot-13.webp",
+      "/images/sets/Skim/aligned/skim-headshot-14.webp",
     ] as string[],
     settleFrame: 11, // lands on headshot-14
     // Framing for face-aligned 1600×1067 transparent PNGs.
