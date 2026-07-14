@@ -659,12 +659,15 @@ export default function FridgeScene({
       const ovDistW = overviewW / 2 / (Math.tan(vFovHalf) * aspect);
       const overviewZ = Math.max(ovDistH, ovDistW) + D * 0.5;
 
-      const detailH = H * 1.02;
-      const detailZ = detailH / 2 / Math.tan(vFovHalf) + D * 0.35;
+      // Tighter zoom + aim slightly below center so the fridge sits higher
+      // (fills top gap) while the bottom stays flush.
+      const detailH = H * 0.88;
+      const detailZ = detailH / 2 / Math.tan(vFovHalf) + D * 0.24;
+      const detailY = H * 0.455;
 
       const z = THREE.MathUtils.lerp(overviewZ, detailZ, openness);
-      const y = THREE.MathUtils.lerp(target.y * 0.96, H * 0.5, openness);
-      const lookY = THREE.MathUtils.lerp(target.y, H * 0.5, openness);
+      const y = THREE.MathUtils.lerp(target.y * 0.96, detailY, openness);
+      const lookY = THREE.MathUtils.lerp(target.y, detailY, openness);
       return { y, z, lookY };
     }
 
@@ -679,13 +682,13 @@ export default function FridgeScene({
       const ovDistW = overviewW / 2 / (Math.tan(vFovHalf) * aspect);
       const overviewZ = Math.max(ovDistH, ovDistW) + D * 0.55;
 
-      // Fill the stage height with the cabinet (doors crop off the sides).
-      const detailH = H * 1.06;
-      const detailZ = detailH / 2 / Math.tan(vFovHalf) + D * 0.35;
+      const detailH = H * 0.9;
+      const detailZ = detailH / 2 / Math.tan(vFovHalf) + D * 0.24;
+      const detailY = H * 0.455;
 
       const z = THREE.MathUtils.lerp(overviewZ, detailZ, openness);
-      const y = THREE.MathUtils.lerp(target.y * 0.96, H * 0.5, openness);
-      const lookY = THREE.MathUtils.lerp(target.y, H * 0.5, openness);
+      const y = THREE.MathUtils.lerp(target.y * 0.96, detailY, openness);
+      const lookY = THREE.MathUtils.lerp(target.y, detailY, openness);
       return { y, z, lookY };
     }
 
