@@ -75,6 +75,10 @@ export function Hero() {
   useLayoutEffect(() => {
     if (!use3D) {
       setHeroTheme("dark");
+      const framing = site.hero.faceFraming;
+      const narrow = window.matchMedia("(max-width: 1023px)").matches;
+      const x = narrow && framing.mobile ? framing.mobile.xPercent : framing.xPercent;
+      if (subjectRef.current) gsap.set(subjectRef.current, { xPercent: x });
       return;
     }
     const section = sectionRef.current;
@@ -89,21 +93,49 @@ export function Hero() {
     const frameColor =
       getComputedStyle(document.documentElement).getPropertyValue("--hero-frame").trim() ||
       "rgba(88,215,255,0.55)";
+    const milkColor =
+      getComputedStyle(document.documentElement).getPropertyValue("--milk").trim() || "#F7F2E8";
 
     // Lando-style: the portrait OPENS full-bleed (entire viewport), then the whole
     // screen minimizes to a centered letterbox. One frame — not a box on a bg.
+    // On narrow viewports, keep a taller (near-portrait) letterbox so the filtered
+    // face stays readable as it rises with the frame.
+    const isNarrow = () => window.matchMedia("(max-width: 1023px)").matches;
     const openW = () => section.clientWidth || window.innerWidth;
     const openH = () => section.clientHeight || window.innerHeight;
-    const smallW = () => Math.min(window.innerWidth * 0.62, 760);
-    const smallH = () => smallW() * (9 / 16); // 16:9 letterbox
+    const smallW = () =>
+      isNarrow()
+        ? Math.min(window.innerWidth * 0.84, 440)
+        : Math.min(window.innerWidth * 0.62, 760);
+    // Mobile letterbox stays near-square so bottom-planted cover fills the
+    // cyan frame without a tall empty band above his head.
+    const smallH = () => (isNarrow() ? smallW() * (5 / 4) : smallW() * (9 / 16));
 
     const FRAME_END = 0.45;
     const FRAME_EARLY = 0.2; // first fifth of scroll — photo "pushes away" fast
     const LOGO_START = 0.50;
     const EXIT_START = 0.92;
 
-    const midW = () => openW() * 0.76;
-    const midH = () => openH() * 0.76;
+    const midW = () => openW() * (isNarrow() ? 0.9 : 0.76);
+    const midH = () => openH() * (isNarrow() ? 0.82 : 0.76);
+
+    const framing = site.hero.faceFraming;
+    const m = framing.mobile;
+    const scaleOpen = () => (isNarrow() && m ? m.scaleOpen : framing.scaleOpen);
+    const scaleClosed = () => (isNarrow() && m ? m.scaleClosed : framing.scaleClosed);
+    const yOpen = () => (isNarrow() && m ? m.yOpen : 0);
+    const yMid = () => (isNarrow() && m ? m.yMid : -6);
+    const yClosed = () => (isNarrow() && m ? m.yClosed : -3);
+    const xNudge = () => (isNarrow() && m ? m.xPercent : framing.xPercent);
+
+    // Sync initial subject framing before the scrubbed timeline owns the transform.
+    if (subjectRef.current) {
+      gsap.set(subjectRef.current, {
+        scale: scaleOpen(),
+        yPercent: yOpen(),
+        xPercent: xNudge(),
+      });
+    }
 
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
@@ -139,25 +171,42 @@ export function Hero() {
         FRAME_EARLY,
       );
 
-      // Cyan frame — visible from the first scroll tick.
+      // Cyan frame + milk fill land together. Opening stays transparent so the
+      // marble Background shows through; milk only fills once the blue border is
+      // on (clipped by overflow+radius — no cream bleed outside the frame).
       tl.fromTo(
         windowRef.current,
-        { borderColor: "rgba(88,215,255,0)", borderRadius: 0 },
-        { borderColor: frameColor, borderRadius: 12, duration: 0.07, ease: "power2.out" },
+        {
+          borderColor: "rgba(88,215,255,0)",
+          borderRadius: 0,
+          backgroundColor: "rgba(247,242,232,0)",
+        },
+        {
+          borderColor: frameColor,
+          borderRadius: 12,
+          backgroundColor: milkColor,
+          duration: 0.07,
+          ease: "power2.out",
+        },
         0,
       );
 
-      // Head lifts slightly as the window recedes — photo pushed away feel.
-      const { scaleOpen, scaleClosed } = site.hero.faceFraming;
+      // Subject scale / y — xPercent holds the optical-center nudge the whole way.
       tl.fromTo(
         subjectRef.current,
-        { scale: scaleOpen, yPercent: 0 },
-        { scale: scaleClosed, yPercent: -6, duration: FRAME_EARLY, ease: "power2.out" },
+        { scale: scaleOpen, yPercent: yOpen, xPercent: xNudge },
+        { scale: scaleClosed, yPercent: yMid, xPercent: xNudge, duration: FRAME_EARLY, ease: "power2.out" },
         0,
       );
       tl.to(
         subjectRef.current,
-        { yPercent: -3, scale: scaleClosed, duration: FRAME_END - FRAME_EARLY, ease: "power1.inOut" },
+        {
+          yPercent: yClosed,
+          scale: scaleClosed,
+          xPercent: xNudge,
+          duration: FRAME_END - FRAME_EARLY,
+          ease: "power1.inOut",
+        },
         FRAME_EARLY,
       );
 
@@ -271,10 +320,12 @@ export function Hero() {
         <div ref={floatRef} className="absolute inset-0 flex items-center justify-center">
           <div
             ref={windowRef}
-            className={`relative overflow-hidden border will-change-[width,height] ${
+            className={`relative isolate overflow-hidden border will-change-[width,height] ${
               use3D
-                ? "h-full w-full border-transparent"
-                : "scale-[0.62] rounded-xl border-[color:var(--hero-frame)]"
+                ? // Transparent at open so the marble canvas shows; GSAP fades in
+                  // milk with the cyan border (clipped — no cream bleed).
+                  "h-full w-full border-transparent bg-transparent"
+                : "scale-[0.62] rounded-xl border-[color:var(--hero-frame)] bg-[color:var(--milk)]"
             }`}
           >
             <div
@@ -301,7 +352,7 @@ export function Hero() {
 
       {/* Foreground: handle + scroll cue (fades out on scroll) */}
       <div ref={foreRef} className="pointer-events-none absolute inset-0 z-30">
-        <p className="absolute left-5 top-20 font-mono text-xs uppercase tracking-[0.35em] text-milk mix-blend-difference sm:left-8">
+        <p className="absolute left-5 top-24 font-mono text-xs uppercase tracking-[0.35em] text-milk mix-blend-difference sm:left-8 sm:top-20">
           @{site.handle}
         </p>
         <div className="absolute inset-x-0 bottom-5 flex justify-center">

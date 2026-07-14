@@ -51,11 +51,18 @@ export function Footer() {
         </div>
 
         <div className="flex flex-col items-start justify-between gap-2 border-t border-line pt-6 sm:flex-row sm:items-center">
-          <RollText
-            text={`© ${site.name}`}
-            className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-mid"
-          />
-          <span className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-mid">
+          {/* Roll letter-spacing reads as broken "© SKI M" on small screens —
+              plain type on mobile, roll kept from sm up (web looks fine). */}
+          <span className="font-mono text-xs uppercase tracking-[0.12em] text-mid sm:hidden">
+            © {site.name}
+          </span>
+          <span className="hidden sm:contents">
+            <RollText
+              text={`© ${site.name}`}
+              className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-mid"
+            />
+          </span>
+          <span className="hidden font-mono text-[0.7rem] uppercase tracking-[0.2em] text-mid sm:inline">
             Built in code · deployed free
           </span>
         </div>

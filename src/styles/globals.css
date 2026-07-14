@@ -111,8 +111,16 @@ a:focus-visible .roll .rl::after {
 
 #bio,
 #work,
+#collaborations,
 #contact {
   scroll-margin-top: calc(var(--nav-offset, 4.5rem) + 4px);
+}
+
+/* Timeline year markers — the spine pill lights up as you pass it, so the
+ * 2023 → 2026 growth arc reads as progression rather than a flat list. */
+.tl-year.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* Bio bear stage — no clip frame; canvas fills the 780×800 sticker box. */

@@ -2,12 +2,14 @@
 // §6 — Collaborations as its OWN standalone section (its own heading + #anchor),
 // no longer bundled under the Work tabs. Content (sets & skits skim produced for
 // others) comes from site.config.collaborations (§0); reuses the media embeds.
-// Empty until skim lists credits — then it shows a calm, directive empty state.
+// Below the credits sits the event-history timeline preview, which links out to
+// the full /collaborations/timeline route.
 
 import { site } from "../data/site.config";
 import { VideoCard } from "./VideoCard";
 import { SpotifyEmbed } from "./SpotifyEmbed";
 import { Reveal } from "./Reveal";
+import { CollabTimelinePreview } from "./CollabTimelinePreview";
 
 export function Collaborations() {
   const items = site.collaborations;
@@ -26,7 +28,11 @@ export function Collaborations() {
           </h2>
         </Reveal>
 
-        {items.length > 0 ? (
+        {/* Credits grid — unchanged, and still the first thing shown the moment
+            site.collaborations has entries. While it's empty we simply say
+            nothing rather than show a placeholder, because the event timeline
+            below is the real proof of work. */}
+        {items.length > 0 && (
           <div className="grid gap-8 sm:grid-cols-2">
             {items.map((c, idx) => (
               <Reveal key={`${c.type}-${c.id}`} delay={idx * 0.04}>
@@ -38,25 +44,9 @@ export function Collaborations() {
               </Reveal>
             ))}
           </div>
-        ) : (
-          <Reveal>
-            <div className="rounded-xl border border-dashed border-line bg-ink-2 p-10 text-center">
-              <p className="font-display text-2xl uppercase text-milk">
-                More on the way
-              </p>
-              <p className="mt-2 font-body text-sm text-mid">
-                Sets and skits skim produced for others. Want to collaborate?{" "}
-                <a
-                  href="/booking"
-                  className="text-accent underline-offset-4 hover:underline"
-                >
-                  Get in contact
-                </a>
-                .
-              </p>
-            </div>
-          </Reveal>
         )}
+
+        <CollabTimelinePreview />
       </div>
     </section>
   );

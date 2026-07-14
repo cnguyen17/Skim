@@ -11,6 +11,7 @@ import { Layout } from "./components/Layout";
 const Home = lazy(() => import("./routes/Home"));
 const Sets = lazy(() => import("./routes/Sets"));
 const Booking = lazy(() => import("./routes/Booking"));
+const CollabTimeline = lazy(() => import("./routes/CollabTimeline"));
 // TEMP (Part A verification) — remove with /_label route once label is confirmed.
 const LabelPreview = lazy(() => import("./routes/LabelPreview"));
 // TEMP (Part B tuning) — remove with /_bear route once the scene is confirmed.
@@ -27,6 +28,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/sets" element={<Sets />} />
             <Route path="/booking" element={<Booking />} />
+            <Route path="/collaborations/timeline" element={<CollabTimeline />} />
           </Route>
           {/* TEMP (Part A verification) — standalone, no Layout. Remove later. */}
           <Route path="/_label" element={<LabelPreview />} />

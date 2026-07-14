@@ -42,31 +42,45 @@ export const site = {
     // `site.handle` (shown as @MYNAMEIZSKIM via CSS uppercase), so the handle
     // stays a single source of truth.
     outro: { headline: "WELCOME TO THE FRIDGE" },
-    // variant="face": aligned transparent-PNG cutouts of the same face, each with
-    // different sunglasses. Sorted by filename; the glasses cycle through all of
-    // these on scroll and settle on `settleFrame`.
+    // variant="face": transparent PNGs (same cutouts as source headshots 3–13),
+    // position-registered in `aligned/` so the swap reads as glasses changing.
+    // Alpha is preserved so the marble/milk shows through — no black plate.
     faceFrames: [
-      "/images/sets/Skim/skim-headshot-3.png",
-      "/images/sets/Skim/skim-headshot-4.png",
-      "/images/sets/Skim/skim-headshot-5.png",
-      "/images/sets/Skim/skim-headshot-6.png",
-      "/images/sets/Skim/skim-headshot-7.png",
-      "/images/sets/Skim/skim-headshot-8.png",
-      "/images/sets/Skim/skim-headshot-9.png",
-      "/images/sets/Skim/skim-headshot-10.png",
-      "/images/sets/Skim/skim-headshot-11.png",
-      "/images/sets/Skim/skim-headshot-12.png",
-      "/images/sets/Skim/skim-headshot-13.png",
-      "/images/sets/Skim/skim-headshot-14.png",
+      "/images/sets/Skim/aligned/skim-headshot-3.png",
+      "/images/sets/Skim/aligned/skim-headshot-4.png",
+      "/images/sets/Skim/aligned/skim-headshot-5.png",
+      "/images/sets/Skim/aligned/skim-headshot-6.png",
+      "/images/sets/Skim/aligned/skim-headshot-7.png",
+      "/images/sets/Skim/aligned/skim-headshot-8.png",
+      "/images/sets/Skim/aligned/skim-headshot-9.png",
+      "/images/sets/Skim/aligned/skim-headshot-10.png",
+      "/images/sets/Skim/aligned/skim-headshot-11.png",
+      "/images/sets/Skim/aligned/skim-headshot-12.png",
+      "/images/sets/Skim/aligned/skim-headshot-13.png",
     ] as string[],
-    settleFrame: 11, // index the cycle eases to / lands on (default: last frame)
-    // Framing for 683×683 aligned face PNGs. object-contain = no crop; full head
-    // + shoulders always visible. Scale nudges slightly on scroll as letterbox forms.
+    settleFrame: 10, // lands on headshot-13
+    // Framing for face-aligned 1600×1067 transparent PNGs.
+    // Desktop: object-contain keeps full head + shoulders.
+    // Mobile: cover focused on the face — headroom above, shirt cropped at bottom.
+    // xPercent stays 0 so the cutout sits centered in the cyan frame.
     faceFraming: {
       objectFit: "contain" as const,
       objectPosition: "50% 50%",
       scaleOpen: 1,
       scaleClosed: 1.06,
+      xPercent: 0,
+      mobile: {
+        objectFit: "cover" as const,
+        objectPosition: "50% 42%",
+        scaleOpen: 1.2,
+        scaleClosed: 1.24,
+        xPercent: 0,
+        // Push down inside the overflow-hidden window: milk headroom above the
+        // beanie, more shirt cropped at the bottom — head reads mid-frame.
+        yOpen: 22,
+        yMid: 14,
+        yClosed: 8,
+      },
     },
   },
 
@@ -179,3 +193,8 @@ export const site = {
     ],
   },
 } as const;
+
+// Event history (46 shows, Dec 2023 → Jul 2026) powering the Collaborations
+// timeline. Kept in its own module for size, re-exported here so content still
+// has one front door (§0).
+export { timelineEvents, timelineNewestFirst, type TimelineEvent } from "./timeline";

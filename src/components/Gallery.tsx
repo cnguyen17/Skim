@@ -14,6 +14,7 @@ import {
 } from "react";
 import { site } from "../data/site.config";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { Lightbox } from "./Lightbox";
 
 type Photo = { src: string; set: string; alt: string };
 
@@ -91,21 +92,6 @@ export function Gallery() {
     [photos.length],
   );
 
-  useEffect(() => {
-    if (openIndex === null) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-      if (e.key === "ArrowRight") step(1);
-      if (e.key === "ArrowLeft") step(-1);
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [openIndex, close, step]);
-
   const pagePhotos = useMemo(() => {
     const start = page * pageSize;
     return photos.slice(start, start + pageSize).map((p, i) => ({
@@ -127,8 +113,6 @@ export function Gallery() {
       </div>
     );
   }
-
-  const current = openIndex === null ? null : photos[openIndex];
 
   return (
     <div
@@ -223,61 +207,13 @@ export function Gallery() {
         )}
       </div>
 
-      {/* Lightbox */}
-      {current && openIndex !== null && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={current.alt}
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-ink/90 p-4 backdrop-blur-sm"
-          onClick={close}
-        >
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              step(-1);
-            }}
-            aria-label="Previous photo"
-            className="absolute left-3 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-milk/40 font-mono text-xl text-milk transition-colors hover:border-accent hover:text-accent sm:left-6 sm:h-14 sm:w-14"
-          >
-            ‹
-          </button>
-
-          <figure
-            className="relative flex max-h-[88vh] max-w-[min(92vw,1100px)] flex-col items-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={current.src}
-              alt={current.alt}
-              className="max-h-[80vh] w-auto max-w-full object-contain"
-            />
-            <figcaption className="mt-4 self-start font-mono text-xs uppercase tracking-[0.2em] text-mid">
-              {openIndex + 1} of {photos.length}
-            </figcaption>
-          </figure>
-
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              step(1);
-            }}
-            aria-label="Next photo"
-            className="absolute right-3 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-milk/40 font-mono text-xl text-milk transition-colors hover:border-accent hover:text-accent sm:right-6 sm:h-14 sm:w-14"
-          >
-            ›
-          </button>
-
-          <button
-            type="button"
-            onClick={close}
-            className="absolute right-5 top-5 font-mono text-xs uppercase tracking-[0.2em] text-milk/70 hover:text-accent"
-          >
-            Close
-          </button>
-        </div>
+      {openIndex !== null && (
+        <Lightbox
+          items={photos}
+          index={openIndex}
+          onClose={close}
+          onStep={step}
+        />
       )}
     </div>
   );

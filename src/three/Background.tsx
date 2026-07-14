@@ -8,9 +8,9 @@
 //   • uMix (0..1, from the shared `progress` ref) lerps the WHOLE field milk→ink:
 //     the base tone and the swirl tone are the SAME two color uniforms, just
 //     swapped, so the page "flips to dark" as you scroll while staying two-color.
-//   • the centerpiece box stays a WINDOW INTO THE LIGHT layer: inside its rect the
-//     field stays light while everything outside darkens. The box rect is read
-//     live from the DOM each frame, so it tracks the window's scale/move exactly.
+//   • the cyan-framed centerpiece keeps its own milk fill in the DOM (clipped by
+//     overflow + radius) — this shader no longer punches a light hole, so cream
+//     can't soft-bleed past the rounded blue border.
 //
 // Readability is a hard rule (brief): the marble is kept LOW-CONTRAST and dimmed
 // (uContrast + a vignette toward the base tone) so the hero face and headline stay
@@ -96,12 +96,10 @@ const fragmentFor = (lowPower: boolean) => /* glsl */ `
     f = clamp(f, 0.0, 1.0);
     f = smoothstep(0.36, 0.64, f);     // tighter band -> distinct, high-contrast veins
 
-    // local mix: inside the centerpiece box the field stays LIGHT (window into the
-    // light layer) while everything outside follows the scroll-driven uMix.
-    vec2 bd = abs(uv - uBoxCenter) - uBoxHalf;
-    float outside = max(bd.x, bd.y);
-    float inBox = 1.0 - smoothstep(-0.004, 0.004, outside);
-    float m = mix(uMix, 0.0, inBox);
+    // Whole ambient field follows scroll mix. The milk interior of the cyan
+    // frame is the DOM window's own bg (overflow:hidden + radius) — so light
+    // never bleeds past the rounded blue border as a soft shader rect.
+    float m = uMix;
 
     // Two color uniforms, lerped by scroll: base tone flips light->dark while the
     // swirl tone is its opposite, so the swirl stays visible at both ends.
@@ -185,14 +183,19 @@ export function Background({
     (u.uMouse.value as Vector2).copy(target.current);
 
     // live box rect → screen UV (y up). Reflects the GSAP scale/translate.
+    // Prefer visualViewport on mobile so the light window tracks the cyan frame
+    // when the URL bar resizes the layout vs visual viewport.
     const el = box.current;
     if (el && typeof window !== "undefined") {
       const r = el.getBoundingClientRect();
-      const W = window.innerWidth || 1;
-      const H = window.innerHeight || 1;
+      const vv = window.visualViewport;
+      const W = vv?.width || window.innerWidth || 1;
+      const H = vv?.height || window.innerHeight || 1;
+      const ox = vv?.offsetLeft || 0;
+      const oy = vv?.offsetTop || 0;
       (u.uBoxCenter.value as Vector2).set(
-        (r.left + r.right) / 2 / W,
-        1 - (r.top + r.bottom) / 2 / H,
+        (r.left - ox + r.width / 2) / W,
+        1 - (r.top - oy + r.height / 2) / H,
       );
       (u.uBoxHalf.value as Vector2).set(r.width / 2 / W, r.height / 2 / H);
     }

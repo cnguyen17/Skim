@@ -109,9 +109,9 @@ export function Nav() {
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-50">
-        <div className="flex items-center justify-between gap-4 px-5 py-4 sm:px-8">
-          {/* Left: logo + menu */}
-          <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-start justify-between gap-3 px-5 py-3 sm:items-center sm:gap-4 sm:px-8 sm:py-4">
+          {/* Left: logo with menu stacked under it on mobile */}
+          <div className="flex min-w-0 flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-6">
             <Link
               to="/"
               aria-label={`${site.name} — home`}
@@ -128,7 +128,7 @@ export function Nav() {
                 alt={`${site.name} wordmark logo`}
                 width={120}
                 height={48}
-                className="h-9 w-auto sm:h-10"
+                className="h-8 w-auto sm:h-10"
               />
             </Link>
 
@@ -138,29 +138,31 @@ export function Nav() {
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
               aria-haspopup="dialog"
-              className={`group flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] transition-colors ${
+              className={`group flex items-center gap-2 font-mono text-[0.65rem] uppercase tracking-[0.22em] transition-colors sm:text-xs sm:tracking-[0.25em] ${
                 light ? "text-ink/80 hover:text-ink" : "text-milk/90 hover:text-milk"
               }`}
             >
               <span className="flex flex-col gap-[3px]" aria-hidden>
-                <span className="block h-px w-5 bg-current" />
-                <span className="block h-px w-5 bg-current" />
+                <span className="block h-px w-4 bg-current sm:w-5" />
+                <span className="block h-px w-4 bg-current sm:w-5" />
               </span>
               Menu
             </button>
           </div>
 
-          {/* Right: booking CTA */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right: booking CTA — compact on small phones */}
+          <div className="flex shrink-0 items-center pt-0.5 sm:pt-0">
             <Link
               to={site.ctas.booking.to}
-              className={
-                light
-                  ? "rounded-full bg-accent px-3 py-2 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink transition-transform hover:-translate-y-0.5 sm:px-4 sm:text-xs sm:tracking-[0.2em]"
-                  : "rounded-full bg-accent px-3 py-2 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink transition-transform hover:-translate-y-0.5 sm:px-4 sm:text-xs sm:tracking-[0.2em]"
-              }
+              aria-label={site.ctas.booking.label}
+              className="rounded-full bg-accent px-2.5 py-1.5 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-ink transition-transform hover:-translate-y-0.5 sm:px-4 sm:py-2 sm:text-xs sm:tracking-[0.2em]"
             >
-              {site.ctas.booking.label}
+              <span className="sm:hidden" aria-hidden="true">
+                Book
+              </span>
+              <span className="hidden sm:inline" aria-hidden="true">
+                {site.ctas.booking.label}
+              </span>
             </Link>
           </div>
         </div>

@@ -65,7 +65,7 @@ export function BioCarton() {
     // anchored in the column so height grows upward; overflow visible = no clip frame.
     <div
       ref={ref}
-      className="bio-bear relative mx-auto h-[min(42rem,88svh)] w-full max-w-[780px] overflow-visible lg:mx-0 lg:ml-auto lg:h-[800px] lg:w-[780px] lg:max-w-none lg:shrink-0"
+      className="bio-bear relative ml-auto h-[min(22rem,58svh)] w-full overflow-visible sm:h-[min(28rem,62svh)] lg:h-[800px] lg:w-[780px] lg:max-w-none lg:shrink-0"
     >
       {mounted ? (
         <Suspense fallback={<NutritionFacts />}>

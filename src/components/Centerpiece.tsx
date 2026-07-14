@@ -35,6 +35,21 @@ function LogoSubject() {
 // in Hero is untouched; this component only chooses which frame is visible.
 const FILTER_END = 0.45; // p at which the cycle has settled (Stage 1 → Stage 2 handoff)
 const power3Out = (x: number) => 1 - Math.pow(1 - x, 3);
+const MOBILE_MQ = "(max-width: 1023px)";
+
+function useNarrowHero() {
+  const [narrow, setNarrow] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia(MOBILE_MQ).matches : false,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_MQ);
+    const onChange = () => setNarrow(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return narrow;
+}
 
 function FaceFilter({
   progress,
@@ -47,6 +62,11 @@ function FaceFilter({
   const n = frames.length;
   const settleFrame = Math.min(Math.max(site.hero.settleFrame, 0), Math.max(n - 1, 0));
   const [idx, setIdx] = useState(settled ? settleFrame : 0);
+  const narrow = useNarrowHero();
+  const framing = site.hero.faceFraming;
+  const mobile = framing.mobile;
+  const objectFit = narrow && mobile ? mobile.objectFit : framing.objectFit;
+  const objectPosition = narrow && mobile ? mobile.objectPosition : framing.objectPosition;
 
   // Preload every frame once so the swap never flickers on first reveal.
   useEffect(() => {
@@ -74,8 +94,6 @@ function FaceFilter({
   }, [n, settleFrame, settled, progress]);
 
   if (n === 0) return <LogoSubject />; // safe fallback until frames are provided
-
-  const { objectFit, objectPosition } = site.hero.faceFraming;
 
   return (
     <div className="relative h-full w-full">
@@ -106,11 +124,15 @@ export const Centerpiece = forwardRef<
     settled?: boolean;
   }
 >(function Centerpiece({ variant, progress, settled = false }, ref) {
+  const narrow = useNarrowHero();
+  // Scale from near the face so zoom keeps the head framed (not bottom-locked).
+  const origin = narrow ? "50% 42%" : "50% 50%";
+
   return (
     <div
       ref={ref}
       className="absolute inset-0 h-full w-full will-change-transform"
-      style={{ transformOrigin: "50% 50%" }}
+      style={{ transformOrigin: origin }}
     >
       {variant === "face" ? (
         <FaceFilter progress={progress} settled={settled} />
