@@ -34,12 +34,58 @@ Two single sources of truth (never hardcode in components):
 - `booking.web3formsKey` — your [Web3Forms](https://web3forms.com) access key
   (free). Until set, the contact form shows a "not configured" notice.
 - `sets[].title` / `producing[].title` — replace the `TODO` titles.
-- `gallery` — add set photos to `public/images/sets/` (WebP/AVIF) and list
-  them here; the gallery filters by the `set` field.
+- `gallery` — now auto-synced from Google Drive; see "Updating gallery photos"
+  below. No hand-editing needed.
 - Brand art: drop `public/bear.svg` (3D hero centerpiece — currently the
   wordmark stands in) and `public/signature.svg` (the scroll signature uses a
   placeholder vector until then). The hero centerpiece is a swappable layer, so
   these drop in without touching scene logic.
+
+## Updating gallery photos (Google Drive sync)
+
+The "From the sets" gallery is synced from a **Google Drive folder** — no code
+edits, no redeploys by hand. skim just uploads; the site pulls the photos,
+optimizes them to WebP, and self-hosts them on Cloudflare's CDN.
+
+**Day-to-day (skim):**
+
+1. Drop photos into the Drive folder. (Optional: put them in a named subfolder —
+   the subfolder name becomes the photo's `set` tag for future filtering.)
+2. They appear on the site automatically within the refresh window (the Worker
+   below runs every 6h). Want it now? Open the Worker URL (or click "Retry
+   deployment" in the Cloudflare Pages dashboard).
+
+**How it works:** `scripts/sync-gallery.mjs` runs during `npm run build`
+(so on every Cloudflare Pages deploy). It lists the Drive folder, downloads +
+compresses each image with `sharp`, writes them to
+`public/images/gallery/drive/`, and regenerates
+[`src/data/gallery.generated.ts`](./src/data/gallery.generated.ts) (which
+`site.config.ts` reads). With no credentials (local dev), it skips and keeps the
+committed manifest, so `npm run dev` still works.
+
+**One-time setup (all free):**
+
+1. **Google side** — create a Google Cloud project, enable the **Drive API**, and
+   create a **service account** with a JSON key. Share the Drive gallery folder
+   (read-only) with the service account's email. (Alternative: skip the service
+   account, make the folder "anyone with the link", and use a Drive **API key**.)
+2. **Cloudflare Pages env vars** (Settings → Environment variables):
+   - `DRIVE_FOLDER_ID` — the folder id (from its URL).
+   - `GOOGLE_SERVICE_ACCOUNT_JSON` — the key JSON (or its base64), **or**
+     `GOOGLE_API_KEY` — a Drive API key.
+3. **Auto-refresh Worker** — deploy the cron trigger that nudges Pages to rebuild:
+   ```bash
+   cd worker/refresh-gallery
+   npx wrangler deploy
+   npx wrangler secret put DEPLOY_HOOK_URL   # paste the Pages deploy-hook URL
+   ```
+   Create the deploy-hook URL in Cloudflare Pages → Settings → Builds &
+   deployments → Deploy hooks. Adjust the schedule in
+   [`worker/refresh-gallery/wrangler.toml`](./worker/refresh-gallery/wrangler.toml).
+
+**Cost:** nothing here is metered at this scale — Workers free tier is 100k
+requests/day (this fires a few times a day), Pages gives 500 builds/month and
+unlimited bandwidth, and Drive API reads are free.
 
 ## Deploy — Cloudflare Pages (free)
 

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "check:models": "node scripts/check-model-sizes.mjs",
-    "build": "node scripts/check-model-sizes.mjs && tsc -b && vite build",
+    "sync:gallery": "node --env-file-if-exists=.env.local scripts/sync-gallery.mjs",
+    "build": "node --env-file-if-exists=.env.local scripts/sync-gallery.mjs && node scripts/check-model-sizes.mjs && tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -33,6 +34,8 @@
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.185.0",
     "@vitejs/plugin-react": "^6.0.2",
+    "googleapis": "^173.0.0",
+    "heic-convert": "^2.1.0",
     "meshoptimizer": "^1.1.1",
     "oxlint": "^1.69.0",
     "sharp": "^0.35.2",

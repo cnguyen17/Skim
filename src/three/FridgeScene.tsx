@@ -309,6 +309,32 @@ export default function FridgeScene({
     const TEX_W = 1024;
     const TEX_H = 1228;
 
+    // Carton geometry + the video "screen" plane. Declared here (above the SVG
+    // writer) so the printed frame can be derived from the SAME window the HTML
+    // video iframe is overlaid on — keeping art + overlay pixel-aligned.
+    const CW = 0.5;
+    const CH = 0.7;
+    const CD = 0.34;
+    const GABLE = 0.16;
+    const SCREEN_W = CW * 0.84;
+    const SCREEN_H = (SCREEN_W * 9) / 16;
+    const SCREEN_Y = CH * 0.6;
+    const SCREEN_Z = CD / 2 + 0.006;
+
+    // The +Z face maps the full texture across CW×CH (image top → face top).
+    // Convert the SCREEN plane into texture pixels + a uniform margin so the
+    // printed frame wraps the video tightly (no dead space below it).
+    const FRAME_PAD = 16;
+    const halfU = SCREEN_W / CW / 2;
+    const topV = (SCREEN_Y + SCREEN_H / 2) / CH;
+    const botV = (SCREEN_Y - SCREEN_H / 2) / CH;
+    const FRAME = {
+      x: (0.5 - halfU) * TEX_W - FRAME_PAD,
+      y: (1 - topV) * TEX_H - FRAME_PAD,
+      w: halfU * 2 * TEX_W + FRAME_PAD * 2,
+      h: (topV - botV) * TEX_H + FRAME_PAD * 2,
+    };
+
     function milkSvg(it: FridgeItem) {
       const splash = it.group === "producing" ? ACCENT_2 : it.group === "collab" ? "#4A5568" : ACCENT;
       const lines = wrapTitle(it.title, 16);
@@ -326,7 +352,7 @@ export default function FridgeScene({
   <text x="48" y="86" fill="${INK}" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="34" font-weight="700" letter-spacing="5">DJ SKIM · ${esc(it.badge)}</text>
   <text x="44" y="220" fill="${INK}" font-family="Arial Black, Helvetica Neue, Arial, sans-serif" font-size="168" font-weight="900" stroke="${INK}" stroke-width="10" paint-order="stroke fill">${esc("SKIM")}</text>
   <text x="44" y="220" fill="${splash}" font-family="Arial Black, Helvetica Neue, Arial, sans-serif" font-size="168" font-weight="900">${esc("SKIM")}</text>
-  <rect x="56" y="268" width="912" height="500" rx="32" fill="#E8E0D4" stroke="${splash}" stroke-width="18"/>
+  <rect x="${FRAME.x.toFixed(1)}" y="${FRAME.y.toFixed(1)}" width="${FRAME.w.toFixed(1)}" height="${FRAME.h.toFixed(1)}" rx="26" fill="#E8E0D4" stroke="${splash}" stroke-width="18"/>
   ${lineTs}
   <path d="M0 960 Q 128 910 256 960 T 512 960 T 768 960 T 1024 960 L1024 ${TEX_H} L0 ${TEX_H} Z" fill="${splash}"/>
   <text x="48" y="1130" fill="${INK}" font-family="Arial Black, Helvetica Neue, Arial, sans-serif" font-size="84" font-weight="900">skim</text>
@@ -409,15 +435,6 @@ export default function FridgeScene({
       disposables.push(tex);
       return tex;
     }
-
-    const CW = 0.5;
-    const CH = 0.7;
-    const CD = 0.34;
-    const GABLE = 0.16;
-    const SCREEN_W = CW * 0.84;
-    const SCREEN_H = (SCREEN_W * 9) / 16;
-    const SCREEN_Y = CH * 0.6;
-    const SCREEN_Z = CD / 2 + 0.006;
 
     function makeCarton(it: FridgeItem) {
       const g = new THREE.Group();

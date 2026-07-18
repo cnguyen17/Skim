@@ -2,6 +2,8 @@
 // §13 Content manifest — SINGLE SOURCE OF TRUTH for all content/links.
 // Never hardcode links/titles in components; read everything from here.
 
+import { galleryPhotos } from "./gallery.generated";
+
 export const site = {
   name: "skim",
   handle: "mynameizskim",
@@ -118,61 +120,11 @@ export const site = {
     role?: string;
   }[],
 
-  // Set photos — paginated grid gallery + lightbox. Drop more into
-  // public/images/gallery/ and list them here.
-  // Order = page order. Best set (former page 3) leads so it opens first.
-  gallery: [
-    { src: "/images/gallery/collage_11.webp", set: "sets", alt: "skim photo collage" },
-    { src: "/images/gallery/img_2282.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_2912.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_2916.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_3480.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_3482.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_3483.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_3495.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_3496.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_4019.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_4020.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_4021.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/01jdy0p0jqage66jdg39883g75-low-res-branded.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/01jdy0z1amzcg4acc6n96zhez8-low-res-branded.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/01jx4q15wqsgpp4whpzpeqkp1x-low-res-branded.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/01jx4q68cq2csxvy92j11tg9bz-low-res-branded.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/105_9996.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/106_0003.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/8e9bad19-75c0-4f4c-8124-ac604fd30849.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/_glv7915-1.webp", set: "sets", alt: "skim at the decks" },
-    { src: "/images/gallery/_glv7977.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/_glv8196.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/_glv8216.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/b1368eb2-6f61-4f1d-8762-bd72ece7df51.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/capture-one-catalog2833.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/capture-one-catalog2863.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/capture-one-catalog2906-1.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/capture-one-catalog2925.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/capture-one-catalog2982.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/capture-one-catalog3024.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/capture-one-catalog3062.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/capture-one-catalog3075.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/capture-one-catalog3104.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/capture-one-catalog3180.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/capture-one-catalog3215.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/capture-one-catalog3261.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_4023.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_4850.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_9093.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_9927.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_9929.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_9931.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_9934.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_9936.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_9938.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_9939.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_9940.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_9941.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_9942.webp", set: "sets", alt: "skim live set" },
-    { src: "/images/gallery/img_9943.webp", set: "sets", alt: "skim live set" },
-  ] as { src: string; set: string; alt: string }[],
+  // Set photos — paginated grid gallery + lightbox. AUTO-SYNCED from a Google
+  // Drive folder at build time (scripts/sync-gallery.mjs → gallery.generated.ts).
+  // To add photos: drop them in the Drive folder (see README "Updating gallery
+  // photos"). Do not hand-edit — this reads the generated manifest.
+  gallery: galleryPhotos as { src: string; set: string; alt: string }[],
 
   booking: {
     // Override via VITE_CALCOM_USER / VITE_WEB3FORMS_KEY in .env.local (see .env.example).

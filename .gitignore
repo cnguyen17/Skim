@@ -12,6 +12,18 @@ dist
 dist-ssr
 *.local
 
+# Gallery photos pulled from Google Drive at build time (Drive is the source of
+# truth; these are regenerated on every build, so never commit them).
+public/images/gallery/drive/
+
+# Google Cloud service-account key files — NEVER commit. The key belongs in
+# .env.local (local) and Cloudflare Pages env vars (deploy), not in the repo.
+vocal-entity-*.json
+*-service-account*.json
+*serviceaccount*.json
+gcp-*.json
+credentials*.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

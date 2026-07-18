@@ -1,0 +1,13 @@
+name = "skim-refresh-gallery"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+# Cron Trigger — how often to auto-refresh the gallery from Google Drive.
+# Default: every 6 hours. Edit to taste (https://crontab.guru). Free tier.
+[triggers]
+crons = ["0 */6 * * *"]
+
+# Secret (do NOT put the URL here — set it out-of-band):
+#   cd worker/refresh-gallery
+#   npx wrangler deploy
+#   npx wrangler secret put DEPLOY_HOOK_URL   # paste the Pages deploy-hook URL
