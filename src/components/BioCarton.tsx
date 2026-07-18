@@ -7,7 +7,7 @@
 // the lower (carton) zone only — never stretched into the upper ear-overlap area
 // that the 3D bear intentionally occupies. Bear stage size stays unchanged.
 
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { preloadBearAssets } from "../three/bearAssets";
 import { preloadLabelTexture } from "../three/useLabelTexture";
@@ -38,31 +38,15 @@ function LoadingFacts() {
 
 export function BioCarton() {
   const reducedMotion = useReducedMotion();
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [nearView, setNearView] = useState(false);
   const [assetsReady, setAssetsReady] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
   const use3D = !reducedMotion && webglAvailable();
 
-  // Mount once when within ~1.5 viewports — stay mounted so scroll away/back
-  // doesn't re-decode the meshopt GLB or rebuild the head skin.
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || !use3D || nearView) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setNearView(true);
-          io.disconnect();
-        }
-      },
-      { rootMargin: "150% 0px 150% 0px" },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [use3D, nearView]);
-
   // Label raster + bear assets (no-ops if Home/Loader already kicked them off).
+  // As soon as the GLB bytes + chunk are in, we mount the canvas — even though
+  // the Bio section is still far offscreen — so the scene builds, uploads to the
+  // GPU, and renders ONCE up top. By the time the user scrolls here the bear is
+  // already fully drawn: no cold mount / decode / "pop" mid-scroll.
   useEffect(() => {
     if (!use3D) return;
     preloadLabelTexture();
@@ -78,13 +62,10 @@ export function BioCarton() {
     );
   }
 
-  const showCanvas = nearView && assetsReady;
+  const showCanvas = assetsReady;
 
   return (
-    <div
-      ref={ref}
-      className="bio-bear relative ml-auto h-[min(22rem,58svh)] w-full overflow-visible sm:h-[min(28rem,62svh)] lg:h-[800px] lg:w-[780px] lg:max-w-none lg:shrink-0"
-    >
+    <div className="bio-bear relative ml-auto h-[min(22rem,58svh)] w-full overflow-visible sm:h-[min(28rem,62svh)] lg:h-[800px] lg:w-[780px] lg:max-w-none lg:shrink-0">
       {/* Placeholder only in the lower carton band — not the upper ear overhang. */}
       <div
         className="transition-opacity duration-500"

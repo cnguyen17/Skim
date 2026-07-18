@@ -32,6 +32,7 @@ export default function BioCartonCanvas({
   const milk = useMemo(() => token("--milk", "#F7F2E8"), []);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(true);
+  const [warmed, setWarmed] = useState(false);
 
   // Keep the WebGL context alive (no remount / re-decode) but pause the
   // render loop once the bio stage scrolls far offscreen.
@@ -46,12 +47,20 @@ export default function BioCartonCanvas({
     return () => io.disconnect();
   }, []);
 
+  // Until the bear has drawn its first lit frame, keep rendering regardless of
+  // visibility — this is what lets it warm up offscreen at the top of the page
+  // (mounted early) instead of cold-mounting mid-scroll.
+  const handleReady = () => {
+    setWarmed(true);
+    onReady?.();
+  };
+
   return (
     <div ref={wrapRef} className="absolute inset-0">
       <Canvas
         dpr={[1, 1.75]}
         shadows
-        frameloop={visible ? "always" : "never"}
+        frameloop={visible || !warmed ? "always" : "never"}
         camera={{ position: [0, CAMERA.y, CAMERA.z], fov: CAMERA.fov }}
         gl={{
           antialias: true,
@@ -67,7 +76,7 @@ export default function BioCartonCanvas({
           <BearMilkScene
             milk={milk}
             reducedMotion={reducedMotion}
-            onReady={onReady}
+            onReady={handleReady}
           />
         </Suspense>
       </Canvas>
