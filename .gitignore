@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Not committed on purpose: a macOS-generated lockfile omits Linux native
+# binaries (sharp, rolldown), which breaks `npm ci` on Cloudflare (npm bug
+# #4828). Without a lockfile, Cloudflare runs `npm install`, which resolves the
+# correct per-platform binaries. Kept locally for reproducible local installs.
+package-lock.json
+
 # Gallery photos pulled from Google Drive at build time (Drive is the source of
 # truth; these are regenerated on every build, so never commit them).
 public/images/gallery/drive/
